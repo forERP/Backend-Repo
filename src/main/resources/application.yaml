@@ -1,6 +1,9 @@
 spring:
   application:
     name: erp-backend
+
+server:
+  port: 8081
 ---
 spring:
   config:
