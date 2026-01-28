@@ -21,6 +21,7 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id")
     private Long id;
 
     @Column(nullable = false, length = 50)
@@ -39,11 +40,8 @@ public class Product {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
-
-    @Column(nullable = false)
-    private Integer stock;
+    @Column(name = "msrp_price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal msrpPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
