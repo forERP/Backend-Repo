@@ -28,9 +28,8 @@ public class ProductService {
                 .category(category)
                 .description(request.getDescription())
                 .imageUrl(request.getImageUrl())
-                .price(request.getPrice())
-                .stock(request.getStock())
-                .status(ProductStatus.ON_SALE)
+                .msrpPrice(request.getPrice())
+                .status(ProductStatus.ACTIVE)
                 .build();
 
         productRepository.save(prd);
