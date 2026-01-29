@@ -20,7 +20,7 @@ public class StoreProduct {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "store_product_id")
-    private Long storeProductId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "store_id", nullable = false)
@@ -67,5 +67,26 @@ public class StoreProduct {
 
     private boolean calculateSellable() {
         return saleStatus == SaleStatus.ON && quantity > 0;
+    }
+
+    /* ===== 재고 감소 ===== */
+    public void decreaseStock(int qty) {
+        if (qty <= 0) {
+            throw new IllegalArgumentException("차감 수량은 0보다 커야 합니다.");
+        }
+        if (this.quantity < qty) {
+            throw new IllegalStateException("재고 부족");
+        }
+        this.quantity -= qty;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /* ===== 재고 증가 (반품/입고) ===== */
+    public void increaseStock(int qty) {
+        if (qty <= 0) {
+            throw new IllegalArgumentException("증가 수량은 0보다 커야 합니다.");
+        }
+        this.quantity += qty;
+        this.updatedAt = LocalDateTime.now();
     }
 }
