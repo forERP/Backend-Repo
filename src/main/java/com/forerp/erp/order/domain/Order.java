@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "order")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
