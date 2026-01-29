@@ -24,7 +24,7 @@ public class Role {
     private String description;
 
 
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "role")
     private Set<User> users = new HashSet<>();
 
     @ManyToMany

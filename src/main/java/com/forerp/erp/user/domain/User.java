@@ -37,8 +37,13 @@ public class User {
     @Column(nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     public void setRole(Role role) {
         this.role = role;
