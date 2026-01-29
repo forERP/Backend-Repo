@@ -1,6 +1,10 @@
 package com.forerp.erp.product.domain;
 
+import com.forerp.erp.inventory.domain.ChangeType;
+import com.forerp.erp.inventory.domain.InventoryHistory;
+import com.forerp.erp.inventory.domain.RefType;
 import com.forerp.erp.store.domain.Store;
+import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -70,23 +74,63 @@ public class StoreProduct {
     }
 
     /* ===== 재고 감소 ===== */
-    public void decreaseStock(int qty) {
+    public InventoryHistory decreaseStock(
+            int qty,
+            RefType refType,
+            Long refId,
+            Long refItemId,
+            User actor
+    ) {
         if (qty <= 0) {
             throw new IllegalArgumentException("차감 수량은 0보다 커야 합니다.");
         }
         if (this.quantity < qty) {
-            throw new IllegalStateException("재고 부족");
+            throw new IllegalStateException("재고가 부족합니다.");
         }
+
+        int before = this.quantity;
         this.quantity -= qty;
-        this.updatedAt = LocalDateTime.now();
+        int after = this.quantity;
+
+        return InventoryHistory.create(
+                this,
+                ChangeType.OUT,
+                qty,
+                before,
+                after,
+                refType,
+                refId,
+                refItemId,
+                actor
+        );
     }
 
     /* ===== 재고 증가 (반품/입고) ===== */
-    public void increaseStock(int qty) {
+    public InventoryHistory increaseStock(
+            int qty,
+            RefType refType,
+            Long refId,
+            Long refItemId,
+            User actor
+    ) {
         if (qty <= 0) {
             throw new IllegalArgumentException("증가 수량은 0보다 커야 합니다.");
         }
+
+        int before = this.quantity;
         this.quantity += qty;
-        this.updatedAt = LocalDateTime.now();
+        int after = this.quantity;
+
+        return InventoryHistory.create(
+                this,
+                ChangeType.IN,
+                qty,
+                before,
+                after,
+                refType,
+                refId,
+                refItemId,
+                actor
+        );
     }
 }
