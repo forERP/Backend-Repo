@@ -1,4 +1,4 @@
-package com.forerp.erp.shipment;
+package com.forerp.erp.shipment.domain;
 
 import com.forerp.erp.order.domain.Order;
 import com.forerp.erp.store.domain.Store;
