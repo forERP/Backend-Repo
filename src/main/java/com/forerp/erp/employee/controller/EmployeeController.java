@@ -19,9 +19,8 @@ public class EmployeeController {
     public ResponseEntity<EmployeeCreateResponseDto> createEmployee(
             @RequestBody EmployeeCreateRequestDto request
     ) {
-        Long createId = employeeService.createEmployee(request);
-        EmployeeCreateResponseDto response = new EmployeeCreateResponseDto(createId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        EmployeeCreateResponseDto responseDto = employeeService.createEmployee(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @PostMapping("/{employeeId}/clock_in")
@@ -42,4 +41,3 @@ public class EmployeeController {
         return ResponseEntity.ok().build();
     }
 }
-
