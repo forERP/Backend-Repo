@@ -22,11 +22,11 @@ public class Outbound {
     @Column(name = "outbound_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
@@ -36,12 +36,17 @@ public class Outbound {
     @OneToMany(mappedBy = "outbound", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OutboundItem> items = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private OutboundStatus status;
+
     /* ===== 생성 로직 ===== */
     public static Outbound create(Order order, Store store, List<OutboundItem> items) {
         Outbound outbound = new Outbound();
         outbound.order = order;
         outbound.store = store;
         outbound.createdAt = LocalDateTime.now();
+        outbound.status = OutboundStatus.CREATED;
 
         items.forEach(item -> {
             item.assignOutbound(outbound);
@@ -49,5 +54,13 @@ public class Outbound {
         });
 
         return outbound;
+    }
+
+    /* ===== 확정 로직 ===== */
+    public void confirm() {
+        if (this.status == OutboundStatus.CONFIRMED) {
+            throw new IllegalStateException("이미 확정된 출고입니다.");
+        }
+        this.status = OutboundStatus.CONFIRMED;
     }
 }

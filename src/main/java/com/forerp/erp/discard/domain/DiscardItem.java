@@ -1,4 +1,4 @@
-package com.forerp.erp.discard;
+package com.forerp.erp.discard.domain;
 
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.domain.RefType;
@@ -31,6 +31,7 @@ public class DiscardItem {
     protected DiscardItem() {
     }
 
+    /* ===== 생성 로직 ===== */
     public static DiscardItem create(
             Discard discard,
             StoreProduct storeProduct,
@@ -45,6 +46,10 @@ public class DiscardItem {
         item.storeProduct = storeProduct;
         item.quantity = quantity;
         return item;
+    }
+
+    void assignDiscard(Discard discard) {
+        this.discard = discard;
     }
 
     /* ===== 폐기 실행 → 재고 감소 + 히스토리 생성 ===== */
