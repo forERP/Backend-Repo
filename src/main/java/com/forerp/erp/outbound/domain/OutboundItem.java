@@ -1,4 +1,4 @@
-package com.forerp.erp.shipment.domain;
+package com.forerp.erp.outbound.domain;
 
 import com.forerp.erp.order.domain.OrderItem;
 import jakarta.persistence.*;
@@ -7,19 +7,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "shipment_items")
+@Table(name = "outbound_items")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ShipmentItem {
+public class OutboundItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "shipment_item_id")
+    @Column(name = "outbound_item_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shipment_id", nullable = false)
-    private Shipment shipment;
+    @JoinColumn(name = "outbound_id", nullable = false)
+    private Outbound outbound;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_item_id", nullable = false)
@@ -29,14 +29,14 @@ public class ShipmentItem {
     private int quantity;
 
     /* ===== 생성 로직 ===== */
-    public static ShipmentItem create(OrderItem orderItem, int quantity) {
-        ShipmentItem item = new ShipmentItem();
+    public static OutboundItem create(OrderItem orderItem, int quantity) {
+        OutboundItem item = new OutboundItem();
         item.orderItem = orderItem;
         item.quantity = quantity;
         return item;
     }
 
-    void assignShipment(Shipment shipment) {
-        this.shipment = shipment;
+    void assignOutbound(Outbound outbound) {
+        this.outbound = outbound;
     }
 }

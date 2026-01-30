@@ -1,4 +1,4 @@
-package com.forerp.erp.shipment.domain;
+package com.forerp.erp.outbound.domain;
 
 import com.forerp.erp.order.domain.Order;
 import com.forerp.erp.store.domain.Store;
@@ -12,14 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "shipments")
+@Table(name = "outbounds")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Shipment {
+public class Outbound {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "shipment_id")
+    @Column(name = "outbound_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -30,24 +30,24 @@ public class Shipment {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    @Column(name = "shipped_at", nullable = false)
-    private LocalDateTime shippedAt;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "shipment", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ShipmentItem> items = new ArrayList<>();
+    @OneToMany(mappedBy = "outbound", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OutboundItem> items = new ArrayList<>();
 
     /* ===== 생성 로직 ===== */
-    public static Shipment create(Order order, Store store, List<ShipmentItem> items) {
-        Shipment shipment = new Shipment();
-        shipment.order = order;
-        shipment.store = store;
-        shipment.shippedAt = LocalDateTime.now();
+    public static Outbound create(Order order, Store store, List<OutboundItem> items) {
+        Outbound outbound = new Outbound();
+        outbound.order = order;
+        outbound.store = store;
+        outbound.createdAt = LocalDateTime.now();
 
         items.forEach(item -> {
-            item.assignShipment(shipment);
-            shipment.items.add(item);
+            item.assignOutbound(outbound);
+            outbound.items.add(item);
         });
 
-        return shipment;
+        return outbound;
     }
 }

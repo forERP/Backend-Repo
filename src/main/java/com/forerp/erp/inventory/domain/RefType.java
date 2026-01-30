@@ -2,8 +2,9 @@ package com.forerp.erp.inventory.domain;
 
 public enum RefType {
     ORDER,
-    SHIPMENT,
+    OUTBOUND,
+    DISCARD,
     RETURN,
-    PO,
-    ADJUST
+    PURCHASE_ORDER,
+    INBOUND
 }
