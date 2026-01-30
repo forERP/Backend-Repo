@@ -76,7 +76,7 @@ public class InventoryHistory {
         this.actorUser = actorUser;
     }
 
-    /* ===== 출고/입고/조정 공통 ===== */
+    /* ===== 생성 로직 (감소/증가 공통) ===== */
     public static InventoryHistory create(
             StoreProduct storeProduct,
             ChangeType changeType,

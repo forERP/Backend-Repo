@@ -90,6 +90,7 @@ public class StoreProduct {
 
         int before = this.quantity;
         this.quantity -= qty;
+        this.isSellable = calculateSellable();
         int after = this.quantity;
 
         return InventoryHistory.create(
@@ -105,7 +106,7 @@ public class StoreProduct {
         );
     }
 
-    /* ===== 재고 증가 (반품/입고) ===== */
+    /* ===== 재고 증가 ===== */
     public InventoryHistory increaseStock(
             int qty,
             RefType refType,
@@ -119,6 +120,7 @@ public class StoreProduct {
 
         int before = this.quantity;
         this.quantity += qty;
+        this.isSellable = calculateSellable();
         int after = this.quantity;
 
         return InventoryHistory.create(
