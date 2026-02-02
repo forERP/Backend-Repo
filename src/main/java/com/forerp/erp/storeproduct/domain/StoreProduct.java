@@ -1,10 +1,12 @@
-package com.forerp.erp.product.domain;
+package com.forerp.erp.storeproduct.domain;
 
 import com.forerp.erp.inventory.domain.ChangeType;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.domain.RefType;
+import com.forerp.erp.product.domain.Product;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.warehouse.domain.Warehouse;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,8 +16,7 @@ import java.time.LocalDateTime;
         name = "store_products",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_store_product",
-                        columnNames = {"store_id", "product_id"}
+                        columnNames = {"store_id", "warehouse_id", "product_id"}
                 )
         }
 )
@@ -29,6 +30,10 @@ public class StoreProduct {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id", nullable = false)
+    private Warehouse warehouse;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
