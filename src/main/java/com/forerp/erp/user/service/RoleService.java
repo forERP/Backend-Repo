@@ -1,28 +1,39 @@
 package com.forerp.erp.user.service;
 
 import com.forerp.erp.user.domain.Role;
+import com.forerp.erp.user.dto.RoleCreateRequestDto;
+import com.forerp.erp.user.dto.RoleResponseDto;
 import com.forerp.erp.user.repository.RoleRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class RoleService {
 
     private final RoleRepository roleRepository;
 
-    public RoleService(RoleRepository roleRepository) {
-        this.roleRepository = roleRepository;
-    }
+    @Transactional
+    public RoleResponseDto createRole(RoleCreateRequestDto request) {
 
-    public Role createRole(String name, String description) {
+        String name = request.getName();
+        String description = request.getDescription();
+
         roleRepository.findByName(name)
-                .ifPresent(r -> { throw new IllegalStateException("Role exists"); });
+                .ifPresent(role -> {
+                    throw new IllegalArgumentException("이미 존재하는 역할 이름입니다." + name);
+                });
 
-        Role role = new Role();
-        role.setName(name);
-        role.setDescription(description);
-        return roleRepository.save(role);
+        Role newRole = Role.builder()
+                .name(name)
+                .description(description)
+                .build();
+
+        Role savedRole = roleRepository.save(newRole);
+
+        return new RoleResponseDto(savedRole);
     }
 }
 

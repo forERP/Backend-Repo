@@ -20,14 +20,19 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public UserResponseDto createUser(UserCreateRequestDto request) {
 
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 역할을 찾을 수 없습니다."));
+
         User newUser = User.builder()
                 .loginId(request.getLoginId())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role(role)
                 .build();
 
         User savedUser = userRepository.save(newUser);
