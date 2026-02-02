@@ -3,7 +3,7 @@ package com.forerp.erp.outbound.domain;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.domain.RefType;
 import com.forerp.erp.order.domain.OrderItem;
-import com.forerp.erp.product.domain.StoreProduct;
+import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

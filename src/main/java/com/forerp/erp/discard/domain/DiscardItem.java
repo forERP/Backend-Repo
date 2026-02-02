@@ -2,7 +2,7 @@ package com.forerp.erp.discard.domain;
 
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.domain.RefType;
-import com.forerp.erp.product.domain.StoreProduct;
+import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
 import lombok.Getter;
