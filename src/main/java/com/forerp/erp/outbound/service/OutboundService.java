@@ -7,6 +7,7 @@ import com.forerp.erp.outbound.domain.Outbound;
 import com.forerp.erp.outbound.domain.OutboundItem;
 import com.forerp.erp.outbound.domain.OutboundStatus;
 import com.forerp.erp.outbound.repository.OutboundRepository;
+import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
@@ -30,24 +31,34 @@ public class OutboundService {
             List<OutboundItem> items
     ) {
         Outbound outbound = Outbound.create(order, store, items);
+
+        Shipment.createForOutbound(outbound);
+
         return outboundRepository.save(outbound);
     }
 
-    /* ===== 출고 확정 ===== */
+    /* ===== 배송 출발 ===== */
+    public void departShipment(Long outboundId, String carrier, String trackingNumber) {
+        Outbound outbound = outboundRepository.findById(outboundId)
+                .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
+
+        outbound.getShipment().depart(carrier, trackingNumber);
+        outbound.changeStatus(OutboundStatus.SHIPPING);
+    }
+
+    /* ===== 배송 도착 → 출고 확정 ===== */
     public void confirmOutbound(Long outboundId, User actor) {
         Outbound outbound = outboundRepository.findById(outboundId)
                 .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
 
-        if (outbound.getStatus() == OutboundStatus.CONFIRMED) {
-            throw new IllegalStateException("이미 확정된 출고입니다.");
-        }
+        Shipment shipment = outbound.getShipment();
+        shipment.arrive();
 
-        // 재고 차감 + 히스토리 생성
         outbound.getItems().forEach(item -> {
             InventoryHistory history = item.ship(actor);
             inventoryHistoryRepository.save(history);
         });
 
-        outbound.confirm(); // status 변경
+        outbound.confirm();
     }
 }
