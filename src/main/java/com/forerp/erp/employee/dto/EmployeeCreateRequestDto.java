@@ -8,8 +8,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EmployeeCreateRequestDto{
 
+    private String employeeCode;
     private String name;
     private Long storeId;
+
     private EmploymentType employmentType;
     private Double hourlyWage;
+    private Integer monthlySalary;
 }

@@ -20,7 +20,6 @@ public class Attendance{
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-
     private Employee employee;
 
     @Column(name = "clock_in", nullable = false)

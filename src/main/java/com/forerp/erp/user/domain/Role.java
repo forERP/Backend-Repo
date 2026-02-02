@@ -37,11 +37,11 @@ public class Role {
 
     public void addUser(User user) {
         users.add(user);
-        user.setRole(this);
+        user.updateRole(this);
     }
 
     public void removeUser(User user) {
         users.remove(user);
-        user.setRole(null);
+        user.updateRole(null);
     }
 }

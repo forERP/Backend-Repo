@@ -1,8 +1,11 @@
 package com.forerp.erp.store.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
 @Table(name = "stores")
 public class Store {
