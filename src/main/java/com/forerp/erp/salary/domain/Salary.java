@@ -1,5 +1,6 @@
 package com.forerp.erp.salary.domain;
 
+import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -15,12 +16,11 @@ public class Salary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "salary_id")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id", nullable = false, unique = true)
-    private Employee employee;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "employment_type", nullable = false)
@@ -33,8 +33,8 @@ public class Salary {
     private Integer monthlySalary;
 
     @Builder
-    public Salary(Employee employee, EmploymentType employmentType, Double hourlyWage, Integer monthlySalary ){
-        this.employee = employee;
+    public Salary(User user, EmploymentType employmentType, Double hourlyWage, Integer monthlySalary ){
+        this.user = user;
         this.employmentType = employmentType;
         this.hourlyWage = hourlyWage;
         this.monthlySalary = monthlySalary;
