@@ -10,14 +10,14 @@ public class UserResponseDto {
     private final Long id;
     private final String loginId;
     private final UserStatus status;
-    private final String roleName;
+    private final String name;
     private final Long storeId;
 
     public UserResponseDto(User user){
         this.id = user.getId();
         this.loginId = user.getLoginId();
         this.status = user.getStatus();
-        this.roleName = user.getRole().getName();
+        this.name = user.getName();
         this.storeId = (user.getStore() != null) ? user.getStore().getId() : null;
     }
 }

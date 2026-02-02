@@ -1,7 +1,5 @@
 package com.forerp.erp.salary.domain;
 
-import com.forerp.erp.employee.domain.Employee;
-import com.forerp.erp.employee.domain.EmploymentType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.forerp.erp.employee.domain;
+package com.forerp.erp.salary.domain;
 
 public enum EmploymentType {
     HOURLY,MONTHLY
