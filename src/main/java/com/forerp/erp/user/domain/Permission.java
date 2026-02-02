@@ -1,30 +1,22 @@
 package com.forerp.erp.user.domain;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+public enum Permission {
+    // 유저 권한 관리
+    USER_CREATE("유저 생성 권한"),
+    USER_READ("유저 조회 권한"),
+    USER_UPDATE("유저 수정 권한"),
+    USER_DELETE("유저 삭제 권한"),
 
-import java.util.HashSet;
-import java.util.Set;
+    // 상품 권한 관리
+    PRODUCT_MANAGE("상품 관리 권한");
 
-@Entity
-@Table(name = "permissions")
-@Getter
-@Setter
-public class Permission {
+    private final String description;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "permission_id")
-    private Long id;
+    Permission(String description){
+        this.description = description;
+    }
 
-    @Column(name = "permission_code", nullable = false, length = 50, unique = true)
-    private String permissionCode;
-
-    @Column(name = "description", length = 255)
-    private String description;
-
-    @ManyToMany(mappedBy = "permissions")
-    private Set<Role> roles = new HashSet<>();
-
+    public String getDescription(){
+        return description;
+    }
 }

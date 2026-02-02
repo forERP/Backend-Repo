@@ -1,8 +1,7 @@
 package com.forerp.erp.user.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -10,38 +9,38 @@ import java.util.Set;
 @Entity
 @Table(name = "roles")
 @Getter
-@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Role {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_id")
     private Long id;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 30, unique = true)
     private String name;
 
     @Column(length = 100)
     private String description;
 
 
-    @OneToMany(mappedBy = "role")
-    private Set<User> users = new HashSet<>();
-
-    @ManyToMany
-    @JoinTable(
-            name = "role_permission",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "permission")
     private Set<Permission> permissions = new HashSet<>();
 
-    public void addUser(User user) {
-        users.add(user);
-        user.updateRole(this);
+    @Builder
+    public Role(String name, String description) {
+        this.name = name;
+        this.description = description;
     }
 
-    public void removeUser(User user) {
-        users.remove(user);
-        user.updateRole(null);
+    public void addPermission(Permission permission) {
+        this.permissions.add(permission);
+    }
+
+    public void removePermission(Permission permission) {
+        this.permissions.remove(permission);
     }
 }

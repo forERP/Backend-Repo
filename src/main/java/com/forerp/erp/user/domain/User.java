@@ -27,7 +27,7 @@ public class User {
     private String passwordHash;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = true)
+    @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
     // 권한 관리용
