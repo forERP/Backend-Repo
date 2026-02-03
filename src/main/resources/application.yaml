@@ -40,6 +40,10 @@ spring:
       ddl-auto: create-drop
     show-sql: false
 
+  jwt:
+    secret:
+      key: My-Franchise-ERP-Project-Secret-Key-Is-Very-Strong-And-Long-12345
+
   h2:
     console:
       enabled: true

@@ -1,6 +1,8 @@
 package com.forerp.erp.user.service;
 
+import com.forerp.erp.common.jwt.JwtUtil;
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.user.dto.LoginRequestDto;
 import com.forerp.erp.user.dto.UserSetupRequestDto;
 import com.forerp.erp.user.dto.UserResponseDto;
 import com.forerp.erp.user.repository.UserRepository;
@@ -21,6 +23,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
 
     @Transactional
@@ -47,6 +50,17 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         return new UserResponseDto(savedUser);
+    }
+
+    // 로그인 처리
+    public String login(LoginRequestDto request){
+        User user = userRepository.findByLoginId(request.getLoginId())
+                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다."));
+        if(!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())){
+            throw new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        return jwtUtil.generateToken(user.getLoginId(), user.getRole());
     }
 
     public UserResponseDto getUser(Long id){
