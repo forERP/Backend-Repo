@@ -1,7 +1,6 @@
 package com.forerp.erp.user.controller;
 
-import com.forerp.erp.user.domain.User;
-import com.forerp.erp.user.dto.UserCreateRequestDto;
+import com.forerp.erp.user.dto.UserSetupRequestDto;
 import com.forerp.erp.user.dto.UserResponseDto;
 import com.forerp.erp.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +17,13 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping
-    public ResponseEntity<UserResponseDto> createUser(@RequestBody UserCreateRequestDto request)
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDto> setupUser(
+            @PathVariable Long id,
+            @RequestBody UserSetupRequestDto request)
        {
-        UserResponseDto responseDto = userService.createUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+        UserResponseDto responseDto = userService.setupUser(id,request);
+        return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/{id}")

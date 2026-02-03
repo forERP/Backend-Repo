@@ -1,17 +1,17 @@
 package com.forerp.erp.user.service;
 
-import com.forerp.erp.user.domain.Role;
 import com.forerp.erp.user.domain.User;
-import com.forerp.erp.user.dto.UserCreateRequestDto;
+import com.forerp.erp.user.dto.UserSetupRequestDto;
 import com.forerp.erp.user.dto.UserResponseDto;
-import com.forerp.erp.user.repository.RoleRepository;
 import com.forerp.erp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,22 +20,32 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+
     @Transactional
-    public UserResponseDto createUser(UserCreateRequestDto request) {
+    public UserResponseDto setupUser(Long id, UserSetupRequestDto request) {
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 역할을 찾을 수 없습니다."));
+        Set<String> userPermissions;
 
-        User newUser = User.builder()
+        if(id == 1){
+            userPermissions= Set.of(
+                    "USER_CREATE",
+                    "USER_DELETE"
+            );
+        }else{
+            userPermissions = new HashSet<>();
+        }
+
+        User user = User.builder()
+                .id(id)
                 .loginId(request.getLoginId())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(role)
+                .name(request.getName())
+                .permission(userPermissions)
                 .build();
 
-        User savedUser = userRepository.save(newUser);
+        User savedUser = userRepository.save(user);
         return new UserResponseDto(savedUser);
     }
 
