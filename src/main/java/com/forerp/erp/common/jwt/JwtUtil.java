@@ -1,6 +1,5 @@
 package com.forerp.erp.common.jwt;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -16,7 +15,7 @@ import java.util.Date;
 public class JwtUtil {
 
     // JWT를 만들 떄 사용하는 암호화 키
-    @Value("${JWT_SECRET_KEY}")
+    @Value("${jwt.secret.key}")
     private String secretKey;
 
     private SecretKey key;
