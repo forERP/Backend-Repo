@@ -1,6 +1,6 @@
 package com.forerp.erp.inventory.domain;
 
-import com.forerp.erp.product.domain.StoreProduct;
+import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
 import lombok.Getter;

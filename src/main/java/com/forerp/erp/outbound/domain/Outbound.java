@@ -1,6 +1,7 @@
 package com.forerp.erp.outbound.domain;
 
 import com.forerp.erp.order.domain.Order;
+import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.store.domain.Store;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -30,6 +31,9 @@ public class Outbound {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
+    @OneToOne(mappedBy = "outbound", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Shipment shipment;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -56,7 +60,17 @@ public class Outbound {
         return outbound;
     }
 
-    /* ===== 확정 로직 ===== */
+    /* ===== 연관관계 ===== */
+    public void assignShipment(Shipment shipment) {
+        this.shipment = shipment;
+    }
+
+    /* ===== 상태 변경 ===== */
+    public void changeStatus(OutboundStatus status) {
+        this.status = status;
+    }
+
+    /* ===== 출고 확정 ===== */
     public void confirm() {
         if (this.status == OutboundStatus.CONFIRMED) {
             throw new IllegalStateException("이미 확정된 출고입니다.");
