@@ -65,7 +65,7 @@ public class User {
         }
     }
 
-    public Set<String> getpermissions(){
+    public Set<String> getPermissions(){
         if(this.permission == null || this.permission.isBlank()){
             return Collections.emptySet();
         }
