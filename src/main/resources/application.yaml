@@ -16,7 +16,7 @@ spring:
     url: jdbc:mysql://localhost:3306/forerp
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: mysql
+    password: 1234
 
   jpa:
     hibernate:

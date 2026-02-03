@@ -54,10 +54,13 @@ public class UserService {
 
     // 로그인 처리
     public String login(LoginRequestDto request){
-        User user = userRepository.findByLoginId(request.getLoginId())
-                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다."));
+        String identifier = request.getIdentifier();
+        String password = request.getPassword();
+
+        User user = userRepository.findByLoginIdOrEmployeeCode(identifier, identifier)
+                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 직원코드가 일치하지 않습니다."));
         if(!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())){
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다.");
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
         return jwtUtil.generateToken(user.getLoginId(), user.getRole());

@@ -26,6 +26,9 @@ public class User {
     @Column(name = "login_id", nullable = false, length = 50, unique = true)
     private String loginId;
 
+    @Column(name = "employee_code", nullable = false, length = 50, unique = true)
+    private String employeeCode;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -79,9 +82,10 @@ public class User {
 
     @Builder
     public User(Long id, String loginId, Store store, String passwordHash, String name,
-                Set<String> permission){
+                Set<String> permission, String employeeCode){
         this.id = id;
         this.loginId = loginId;
+        this.employeeCode = employeeCode;
         this.store = store;
         this.name = name;
         this.passwordHash = passwordHash;
