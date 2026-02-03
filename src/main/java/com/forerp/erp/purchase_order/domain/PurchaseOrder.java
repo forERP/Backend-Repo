@@ -93,4 +93,12 @@ public class PurchaseOrder {
         }
         this.status = PurchaseOrderStatus.CANCELLED;
     }
+
+    /* ===== 발주 입고 완료 ===== */
+    public void markReceived() {
+        if (this.status != PurchaseOrderStatus.ORDERED) {
+            throw new IllegalStateException("발주 상태가 ORDERED가 아닙니다.");
+        }
+        this.status = PurchaseOrderStatus.RECEIVED;
+    }
 }
