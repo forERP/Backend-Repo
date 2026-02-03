@@ -45,4 +45,4 @@ spring:
 
   jwt:
     secret:
-      key: My-Franchise-ERP-Project-Secret-Key-Is-Very-Strong-And-Long-12345
+      key: ${JWT_SECRET_KEY}
