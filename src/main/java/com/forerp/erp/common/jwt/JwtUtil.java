@@ -16,7 +16,7 @@ import java.util.Date;
 public class JwtUtil {
 
     // JWT를 만들 떄 사용하는 암호화 키
-    @Value("${jwt.secret.key}")
+    @Value("${JWT_SECRET_KEY}")
     private String secretKey;
 
     private SecretKey key;
