@@ -1,13 +1,17 @@
 package com.forerp.erp.store.domain;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
 @Entity
 @Table(name = "stores")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Store {
 
     @Id
@@ -19,7 +23,7 @@ public class Store {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "store_type", nullable = false, length = 10)
+    @Column(name = "store_type", nullable = false)
     private StoreType storeType = StoreType.STORE;
 
     @Enumerated(EnumType.STRING)
@@ -32,6 +36,13 @@ public class Store {
     @PrePersist
     private void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    @Builder
+    private Store(String name, StoreType storeType, StoreStatus status) {
+        this.name = name;
+        this.storeType = (storeType == null) ? StoreType.STORE : storeType;
+        this.status = (status == null) ? StoreStatus.OPEN : status;
     }
 
     public boolean isHQ() {

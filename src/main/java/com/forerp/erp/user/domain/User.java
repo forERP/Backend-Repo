@@ -16,10 +16,11 @@ import java.util.stream.Collectors;
 @Entity
 @Table(name = "users")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED )
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
     private Long id;
 
@@ -35,7 +36,6 @@ public class User {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    // 어느 매장 소속인지 나타내는 정보
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id")
     private Store store;
@@ -44,54 +44,33 @@ public class User {
     @Column(nullable = false)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private UserRole role;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "permissions")
-    private String permission;
-
-    public String getRole(){
-        if(this.id==null){
-            return null;
-        }
-        switch (this.id.intValue()){
-            case 1:
-                return "HQ_ADMIN";
-            case 2:
-                return "STORE_ADMIN";
-            case 3:
-                return "STORE_HALL_STAFF";
-            case 4:
-                return "STORE_KITCHEN_STAFF";
-            default:
-                return  "UNKNOWN";
-        }
-    }
-
-    public Set<String> getPermissions(){
-        if(this.permission == null || this.permission.isBlank()){
-            return Collections.emptySet();
-        }
-        return Arrays.stream(this.permission.split(",")).collect(Collectors.toSet());
-    }
-
     @PrePersist
-    protected void onPrePersist(){
+    protected void onPrePersist() {
         this.createdAt = LocalDateTime.now();
+        if (this.status == null) this.status = UserStatus.ACTIVE;
     }
 
     @Builder
-    public User(Long id, String loginId, Store store, String passwordHash, String name,
-                Set<String> permission, String employeeCode){
-        this.id = id;
+    public User(String loginId,
+                String employeeCode,
+                String passwordHash,
+                String name,
+                Store store,
+                UserRole role) {
+
         this.loginId = loginId;
         this.employeeCode = employeeCode;
-        this.store = store;
-        this.name = name;
         this.passwordHash = passwordHash;
+        this.name = name;
+        this.store = store;
+        this.role = role;
         this.status = UserStatus.ACTIVE;
-        if(permission != null && !permission.isEmpty()){
-            this.permission= String.join(",", permission);
-        }
     }
 }

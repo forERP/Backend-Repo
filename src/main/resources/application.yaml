@@ -6,6 +6,16 @@ spring:
 
 server:
   port: 8081
+
+app:
+  bootstrap:
+    admin:
+      enabled: true
+      login-id: admin
+      employee-code: 0000
+      password: admin
+      name: System Admin
+      role: HQ_ADMIN
 ---
 spring:
   config:
@@ -16,7 +26,7 @@ spring:
     url: jdbc:mysql://localhost:3306/forerp
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 1234
+    password: mysql
 
   jpa:
     hibernate:
@@ -43,6 +53,6 @@ spring:
       ddl-auto: create-drop
     show-sql: false
 
-  jwt:
-    secret:
-      key: ${JWT_SECRET_KEY}
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
