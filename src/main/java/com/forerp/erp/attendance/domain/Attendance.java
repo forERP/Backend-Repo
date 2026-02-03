@@ -1,5 +1,6 @@
 package com.forerp.erp.attendance.domain;
 
+import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -18,6 +19,10 @@ public class Attendance{
     @Column(name = "attendance_id")
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Column(name = "clock_in", nullable = false)
     private LocalDateTime clockIn; // 출근 시각
 
@@ -30,7 +35,8 @@ public class Attendance{
 
     // 출근
     @Builder
-    public Attendance(LocalDateTime clockIn){
+    public Attendance(LocalDateTime clockIn, User user){
+        this.user = user;
         this.clockIn = clockIn;
         this.status = AttendanceStatus.WORK;
     }
