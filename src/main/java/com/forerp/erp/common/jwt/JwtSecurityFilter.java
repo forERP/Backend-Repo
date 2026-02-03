@@ -46,7 +46,7 @@ public class JwtSecurityFilter extends OncePerRequestFilter {
                         .map(permission -> new SimpleGrantedAuthority("ROLE_" + permission)).collect(Collectors.toList());
 
                 Authentication authentication = new UsernamePasswordAuthenticationToken(
-                        user.getLoginId(),
+                        user,
                         null,
                         authorities); // 권한 목록
 
