@@ -1,8 +1,10 @@
 package com.forerp.erp.user.controller;
 
+import com.forerp.erp.user.dto.LoginRequestDto;
 import com.forerp.erp.user.dto.UserSetupRequestDto;
 import com.forerp.erp.user.dto.UserResponseDto;
 import com.forerp.erp.user.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,12 +28,20 @@ public class UserController {
         return ResponseEntity.ok(responseDto);
     }
 
+    // 로그인 API
+    public ResponseEntity<String> login(@RequestBody LoginRequestDto request, HttpServletResponse response) {
+        String token = userService.login(request);
+
+        response.setHeader("Authorization", "Bearer" + token);
+
+        return ResponseEntity.ok("로그인에 성공했습니다.");
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUser(@PathVariable Long id) {
         UserResponseDto responseDto = userService.getUser(id);
         return ResponseEntity.ok(responseDto);
     }
-
 
     @GetMapping
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
@@ -40,7 +50,6 @@ public class UserController {
         return ResponseEntity.ok(userList);
 
     }
-
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
