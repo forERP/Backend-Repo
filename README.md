@@ -1,8 +1,6 @@
-# Backend Repo 
+# Local Development Setup
 
-## Local Development Setup
-
-```cmd
+```bash
 # 저장소 클론
 git clone https://github.com/forERP/Backend-Repo.git
 cd Backend-Repo
