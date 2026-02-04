@@ -1,5 +1,6 @@
 package com.forerp.erp.user.service;
 
+import com.forerp.erp.common.audit.AuditLogService;
 import com.forerp.erp.common.jwt.JwtUtil;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.dto.LoginRequestDto;
@@ -24,6 +25,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuditLogService auditLogService;
 
 
     @Transactional
@@ -49,6 +51,9 @@ public class UserService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        auditLogService.logAction(savedUser, "CREATE_USER", "USER", savedUser.getId());
+
         return new UserResponseDto(savedUser);
     }
 
