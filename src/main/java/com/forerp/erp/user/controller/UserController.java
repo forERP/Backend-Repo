@@ -1,9 +1,6 @@
 package com.forerp.erp.user.controller;
 
-import com.forerp.erp.user.dto.LoginRequestDto;
-import com.forerp.erp.user.dto.LoginResponseDto;
-import com.forerp.erp.user.dto.UserCreateRequestDto;
-import com.forerp.erp.user.dto.UserResponseDto;
+import com.forerp.erp.user.dto.*;
 import com.forerp.erp.user.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -54,5 +51,10 @@ public class UserController {
     @GetMapping
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    // 회원 정보 수정
+    public ResponseEntity<UserResponseDto> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDto request){
+        return ResponseEntity.ok(userService.updateUser(id, request));
     }
 }

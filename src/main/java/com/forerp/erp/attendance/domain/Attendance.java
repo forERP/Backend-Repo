@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Table(name = "attendances")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Attendance{
 
