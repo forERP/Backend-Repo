@@ -1,5 +1,6 @@
 package com.forerp.erp.user.service;
 
+import com.forerp.erp.common.audit.AuditLogService;
 import com.forerp.erp.common.jwt.JwtUtil;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.store.repository.StoreRepository;
@@ -26,6 +27,7 @@ public class UserService {
     private final StoreRepository storeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuditLogService auditLogService;
 
     // 유저 생성 (본사 관리자가)
     @Transactional
@@ -51,6 +53,7 @@ public class UserService {
 
         User saved = userRepository.save(user);
         return new UserResponseDto(saved);
+
     }
 
     // 유저 삭제 (본사 관리자가)

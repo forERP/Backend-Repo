@@ -8,6 +8,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByLoginId(String loginId);
 
+    Optional<User> findByEmployeeCode(String employeeCode);
+
     boolean existsByLoginId(String loginId);
 
     boolean existsByEmployeeCode(String employeeCode);

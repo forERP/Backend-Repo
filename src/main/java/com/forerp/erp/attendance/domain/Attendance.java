@@ -27,7 +27,7 @@ public class Attendance{
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
 
-    @Column(name = "clock_in", nullable = false)
+    @Column(name = "clock_in", nullable = true)
     private LocalDateTime clockIn; // 출근 시각
 
     @Column(name = "clock_out")
