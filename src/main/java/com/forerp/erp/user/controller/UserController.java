@@ -1,12 +1,13 @@
 package com.forerp.erp.user.controller;
 
 import com.forerp.erp.user.dto.LoginRequestDto;
-import com.forerp.erp.user.dto.UserSetupRequestDto;
+import com.forerp.erp.user.dto.LoginResponseDto;
+import com.forerp.erp.user.dto.UserCreateRequestDto;
 import com.forerp.erp.user.dto.UserResponseDto;
 import com.forerp.erp.user.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -19,41 +20,39 @@ public class UserController {
 
     private final UserService userService;
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDto> setupUser(
-            @PathVariable Long id,
-            @RequestBody UserSetupRequestDto request)
-       {
-        UserResponseDto responseDto = userService.setupUser(id,request);
-        return ResponseEntity.ok(responseDto);
+    // 유저 생성 (본사 관리자가)
+    @PostMapping
+    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserCreateRequestDto request) {
+        return ResponseEntity.ok(userService.createUser(request));
     }
 
-    // 로그인 API
-    public ResponseEntity<String> login(@RequestBody LoginRequestDto request, HttpServletResponse response) {
-        String token = userService.login(request);
-
-        response.setHeader("Authorization", "Bearer" + token);
-
-        return ResponseEntity.ok("로그인에 성공했습니다.");
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUser(@PathVariable Long id) {
-        UserResponseDto responseDto = userService.getUser(id);
-        return ResponseEntity.ok(responseDto);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
-        List<UserResponseDto> userList =userService.getAllUser();
-
-        return ResponseEntity.ok(userList);
-
-    }
-
+    // 유저 삭제 (본사 관리자가)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // 로그인 (관리자 페이지)
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto request,
+                                                  HttpServletResponse response) {
+        LoginResponseDto loginResponse = userService.login(request);
+
+        response.setHeader("Authorization", "Bearer " + loginResponse.getToken());
+
+        return ResponseEntity.ok(loginResponse);
+    }
+
+    // 회원 정보 조회
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDto> getUser(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUser(id));
+    }
+
+    // 회원 정보 모두 조회
+    @GetMapping
+    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 }

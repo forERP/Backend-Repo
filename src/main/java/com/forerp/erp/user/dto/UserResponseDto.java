@@ -2,22 +2,32 @@ package com.forerp.erp.user.dto;
 
 
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.user.domain.UserRole;
 import com.forerp.erp.user.domain.UserStatus;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 public class UserResponseDto {
+
     private final Long id;
     private final String loginId;
-    private final UserStatus status;
+    private final String employeeCode;
     private final String name;
     private final Long storeId;
+    private final UserRole role;
+    private final UserStatus status;
+    private final LocalDateTime createdAt;
 
-    public UserResponseDto(User user){
+    public UserResponseDto(User user) {
         this.id = user.getId();
         this.loginId = user.getLoginId();
-        this.status = user.getStatus();
+        this.employeeCode = user.getEmployeeCode();
         this.name = user.getName();
-        this.storeId = (user.getStore() != null) ? user.getStore().getId() : null;
+        this.storeId = (user.getStore() == null) ? null : user.getStore().getId();
+        this.role = user.getRole();
+        this.status = user.getStatus();
+        this.createdAt = user.getCreatedAt();
     }
 }

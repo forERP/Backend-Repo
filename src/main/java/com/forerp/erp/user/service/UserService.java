@@ -2,9 +2,13 @@ package com.forerp.erp.user.service;
 
 import com.forerp.erp.common.audit.AuditLogService;
 import com.forerp.erp.common.jwt.JwtUtil;
+import com.forerp.erp.store.domain.Store;
+import com.forerp.erp.store.repository.StoreRepository;
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.user.domain.UserStatus;
 import com.forerp.erp.user.dto.LoginRequestDto;
-import com.forerp.erp.user.dto.UserSetupRequestDto;
+import com.forerp.erp.user.dto.LoginResponseDto;
+import com.forerp.erp.user.dto.UserCreateRequestDto;
 import com.forerp.erp.user.dto.UserResponseDto;
 import com.forerp.erp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,10 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,72 +24,75 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final StoreRepository storeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuditLogService auditLogService;
 
-
+    // 유저 생성 (본사 관리자가)
     @Transactional
-    public UserResponseDto setupUser(Long id, UserSetupRequestDto request) {
-
-        Set<String> userPermissions;
-
-        if(id == 1){
-            userPermissions= Set.of(
-                    "USER_CREATE",
-                    "USER_DELETE"
-            );
-        }else{
-            userPermissions = new HashSet<>();
+    public UserResponseDto createUser(UserCreateRequestDto request) {
+        if (userRepository.existsByLoginId(request.getLoginId())) {
+            throw new IllegalArgumentException("이미 사용 중인 로그인 ID 입니다.");
+        }
+        if (userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
+            throw new IllegalArgumentException("이미 사용 중인 직원코드 입니다.");
         }
 
+        Store store = storeRepository.findById(request.getStoreId())
+                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
+
         User user = User.builder()
-                .id(id)
                 .loginId(request.getLoginId())
+                .employeeCode(request.getEmployeeCode())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
-                .permission(userPermissions)
+                .store(store)
+                .role(request.getRole())
                 .build();
 
-        User savedUser = userRepository.save(user);
+        User saved = userRepository.save(user);
+        return new UserResponseDto(saved);
 
-        auditLogService.logAction(savedUser, "CREATE_USER", "USER", savedUser.getId());
-
-        return new UserResponseDto(savedUser);
     }
 
-    // 로그인 처리
-    public String login(LoginRequestDto request){
-        String identifier = request.getIdentifier();
-        String password = request.getPassword();
+    // 유저 삭제 (본사 관리자가)
+    @Transactional
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new IllegalStateException("삭제할 사용자를 찾을 수 없습니다.");
+        }
+        userRepository.deleteById(id);
+    }
 
-        User user = userRepository.findByLoginIdOrEmployeeCode(identifier, identifier)
-                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 직원코드가 일치하지 않습니다."));
-        if(!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())){
+    // 로그인 (관리자 페이지)
+    public LoginResponseDto login(LoginRequestDto request) {
+        User user = userRepository.findByLoginId(request.getIdentifier())
+                .orElseThrow(() -> new IllegalArgumentException("아이디가 일치하지 않습니다."));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new IllegalStateException("비활성 사용자입니다.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        return jwtUtil.generateToken(user.getLoginId(), user.getRole());
+        String token = jwtUtil.generateToken(user.getLoginId());
+        return new LoginResponseDto(token, user.getRole(), user.getId());
     }
 
-    public UserResponseDto getUser(Long id){
+    // 회원 정보 조회
+    public UserResponseDto getUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         return new UserResponseDto(user);
     }
 
-    public List<UserResponseDto> getAllUser(){
-        return  userRepository.findAll().stream()
+    // 회원 정보 모두 조회
+    public List<UserResponseDto> getAllUsers() {
+        return userRepository.findAll().stream()
                 .map(UserResponseDto::new)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void deleteUser(Long id){
-        if(!userRepository.existsById(id)){
-            throw new IllegalStateException("삭제할 사용자를 찾을 수 없습니다.");
-        }
-
-        userRepository.deleteById(id);
+                .toList();
     }
 }
