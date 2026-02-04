@@ -2,6 +2,7 @@ package com.forerp.erp.user.service;
 
 import com.forerp.erp.common.audit.AuditLogService;
 import com.forerp.erp.common.jwt.JwtUtil;
+import com.forerp.erp.common.jwt.SecurityUtil;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.store.repository.StoreRepository;
 import com.forerp.erp.user.domain.User;
@@ -24,7 +25,9 @@ public class UserService {
     private final StoreRepository storeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
     private final AuditLogService auditLogService;
+    private final SecurityUtil securityUtil;
 
     // 유저 생성 (본사 관리자가)
     @Transactional
@@ -49,8 +52,15 @@ public class UserService {
                 .build();
 
         User saved = userRepository.save(user);
-        return new UserResponseDto(saved);
 
+        try{
+            User admin = securityUtil.getCurrentUser();
+            auditLogService.logAction(admin, "CREATE_USER", "USER", saved.getId());
+        }catch (Exception e){
+            System.out.println("로그 기록 실패:" + e.getMessage());
+        }
+
+        return new UserResponseDto(saved);
     }
 
     // 유저 삭제 (본사 관리자가)
@@ -60,6 +70,42 @@ public class UserService {
             throw new IllegalStateException("삭제할 사용자를 찾을 수 없습니다.");
         }
         userRepository.deleteById(id);
+
+        try{
+            User admin = securityUtil.getCurrentUser();
+            auditLogService.logAction(admin, "DELETE_USER", "USER", id);
+        }catch (Exception e){
+            System.out.println("로그 기록 실패:" + e.getMessage());
+        }
+    }
+
+    // 회원 정보 수정
+    @Transactional
+    public UserResponseDto updateUser(Long id, UserUpdateRequestDto request){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Store store = null;
+        if(request.getStoreId() != null){
+            store = storeRepository.findById(request.getStoreId())
+                    .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 업습니다."));
+        }
+
+        String encodedPassword = null;
+        if(request.getPassword() != null && !request.getPassword().isBlank()){
+            encodedPassword = passwordEncoder.encode(request.getPassword());
+        }
+
+        user.updateInfo(request.getName(), encodedPassword, store, request.getRole());
+
+        try{
+            User admin = securityUtil.getCurrentUser();
+            auditLogService.logAction(admin, "UPDATE_USER", "USER", user.getId());
+        }catch (Exception e){
+            System.out.println("로그 기록 실패:" + e.getMessage());
+        }
+
+        return new UserResponseDto(user);
     }
 
     // 로그인 (관리자 페이지)
@@ -93,24 +139,5 @@ public class UserService {
                 .toList();
     }
 
-    // 회원 정보 수정
-    public UserResponseDto updateUser(Long id, UserUpdateRequestDto request){
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        Store store = null;
-        if(request.getStoreId() != null){
-            store = storeRepository.findById(request.getStoreId())
-                    .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 업습니다."));
-        }
-
-        String encodedPassword = null;
-        if(request.getPassword() != null && !request.getPassword().isBlank()){
-            encodedPassword = passwordEncoder.encode(request.getPassword());
-        }
-
-        user.updateInfo(request.getName(), encodedPassword, store, request.getRole());
-
-        return new UserResponseDto(user);
-    }
 }
