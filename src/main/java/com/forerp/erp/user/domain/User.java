@@ -69,4 +69,12 @@ public class User {
         this.role = role;
         this.status = UserStatus.ACTIVE;
     }
+
+    // 회원 정보 수정
+    public void updateInfo(String name, String passwordHash, Store store, UserRole role){
+        if (name != null) this.name = name;
+        if (passwordHash != null) this.passwordHash = passwordHash;
+        if (store != null) this.store = store;
+        if (role != null) this.role = role;
+    }
 }

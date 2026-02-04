@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 
 @Entity
 @Table(name = "salaries")
@@ -26,18 +28,24 @@ public class Salary {
     @Column(name = "employment_type", nullable = false)
     private EmploymentType employmentType;
 
-    @Column(name = "hourly_Wage")
-    private Double hourlyWage;
+    @Column(name = "hourly_wage")
+    private BigDecimal hourlyWage;
 
     @Column(name = "monthly_salary")
-    private Integer monthlySalary;
+    private BigDecimal monthlySalary;
 
     @Builder
-    public Salary(User user, EmploymentType employmentType, Double hourlyWage, Integer monthlySalary ){
+    public Salary(User user, EmploymentType employmentType, BigDecimal hourlyWage, BigDecimal monthlySalary ){
         this.user = user;
         this.employmentType = employmentType;
         this.hourlyWage = hourlyWage;
         this.monthlySalary = monthlySalary;
+    }
+
+    public void update(EmploymentType employmentType, BigDecimal hourlyWage, BigDecimal monthlySalary){
+        this.employmentType = employmentType;
+        this.monthlySalary = monthlySalary;
+        this.hourlyWage = hourlyWage;
     }
 
 

@@ -6,10 +6,7 @@ import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.store.repository.StoreRepository;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.domain.UserStatus;
-import com.forerp.erp.user.dto.LoginRequestDto;
-import com.forerp.erp.user.dto.LoginResponseDto;
-import com.forerp.erp.user.dto.UserCreateRequestDto;
-import com.forerp.erp.user.dto.UserResponseDto;
+import com.forerp.erp.user.dto.*;
 import com.forerp.erp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -94,5 +91,26 @@ public class UserService {
         return userRepository.findAll().stream()
                 .map(UserResponseDto::new)
                 .toList();
+    }
+
+    // 회원 정보 수정
+    public UserResponseDto updateUser(Long id, UserUpdateRequestDto request){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Store store = null;
+        if(request.getStoreId() != null){
+            store = storeRepository.findById(request.getStoreId())
+                    .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 업습니다."));
+        }
+
+        String encodedPassword = null;
+        if(request.getPassword() != null && !request.getPassword().isBlank()){
+            encodedPassword = passwordEncoder.encode(request.getPassword());
+        }
+
+        user.updateInfo(request.getName(), encodedPassword, store, request.getRole());
+
+        return new UserResponseDto(user);
     }
 }

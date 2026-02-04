@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Table(name = "audit_logs")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AuditLog {
 
