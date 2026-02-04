@@ -1,6 +1,6 @@
 package com.forerp.erp;
 
-import com.forerp.erp.common.AdminBootstrapProperties;
+import com.forerp.erp.common.bootstrap.AdminBootstrapProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

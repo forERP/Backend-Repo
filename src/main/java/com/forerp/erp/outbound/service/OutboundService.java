@@ -3,13 +3,24 @@ package com.forerp.erp.outbound.service;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
 import com.forerp.erp.order.domain.Order;
+import com.forerp.erp.order.domain.OrderItem;
+import com.forerp.erp.order.repository.OrderItemRepository;
+import com.forerp.erp.order.repository.OrderRepository;
 import com.forerp.erp.outbound.domain.Outbound;
 import com.forerp.erp.outbound.domain.OutboundItem;
+import com.forerp.erp.outbound.dto.OutboundCreateRequest;
 import com.forerp.erp.outbound.repository.OutboundRepository;
+import com.forerp.erp.product.domain.Product;
+import com.forerp.erp.product.repository.ProductRepository;
 import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.shipment.domain.ShipmentStatus;
 import com.forerp.erp.store.domain.Store;
+import com.forerp.erp.store.repository.StoreRepository;
+import com.forerp.erp.storeproduct.domain.StoreProduct;
+import com.forerp.erp.storeproduct.repository.StoreProductRepository;
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.warehouse.domain.Warehouse;
+import com.forerp.erp.warehouse.repository.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,49 +34,85 @@ public class OutboundService {
 
     private final OutboundRepository outboundRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
+    private final OrderRepository orderRepository;
+    private final StoreRepository storeRepository;
+    private final WarehouseRepository warehouseRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final StoreProductRepository storeProductRepository;
 
     /* ===== 출고 생성 ===== */
-    public Outbound createOutbound(Order order, Store store, List<OutboundItem> items) {
+    @Transactional
+    public Outbound createOutbound(OutboundCreateRequest req) {
+        Order order = orderRepository.findById(req.getOrderId())
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+
+        Store store = storeRepository.findById(req.getStoreId())
+                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
+
+        Warehouse warehouse = warehouseRepository.findById(req.getWarehouseId())
+                .orElseThrow(() -> new IllegalArgumentException("창고를 찾을 수 없습니다."));
+
+        List<OutboundItem> items = req.getItems().stream()
+                .map(i -> {
+                    OrderItem orderItem = orderItemRepository.findById(i.getOrderItemId())
+                            .orElseThrow(() -> new IllegalArgumentException("주문 아이템을 찾을 수 없습니다. orderItemId=" + i.getOrderItemId()));
+
+                    if (!orderItem.getOrder().getId().equals(order.getId())) {
+                        throw new IllegalArgumentException("주문에 속하지 않은 orderItem 입니다. orderItemId=" + i.getOrderItemId());
+                    }
+
+                    Product product = orderItem.getProduct();
+
+                    StoreProduct sp = storeProductRepository
+                            .findByStore_IdAndWarehouse_IdAndProduct_Id(store.getId(), warehouse.getId(), product.getId())
+                            .orElseThrow(() -> new IllegalStateException("해당 창고에 재고 정보(StoreProduct)가 없습니다. productId=" + product.getId()));
+
+                    return OutboundItem.create(orderItem, sp, i.getQty());
+                })
+                .toList();
+
         Outbound outbound = Outbound.create(order, store, items);
         Shipment.createForOutbound(outbound);
         return outboundRepository.save(outbound);
     }
 
-    /* ===== 배송 출발 → 출고 확정 ===== */
-    @Transactional
-    public void confirmOutbound(Long outboundId, User actor, String carrier, String trackingNumber) {
+    /* ===== 배송 출발 + 재고 차감 + 출고 확정 ===== */
+    public Outbound confirmOutbound(Long outboundId, User actor, String carrier, String trackingNumber) {
         Outbound outbound = outboundRepository.findById(outboundId)
                 .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
 
         Shipment shipment = outbound.getShipment();
-        if (shipment == null) {
-            throw new IllegalStateException("출고에 연결된 배송 정보가 없습니다.");
-        }
+        if (shipment == null) throw new IllegalStateException("출고에 연결된 배송 정보가 없습니다.");
 
-        // 1) 배송 출발(송장 필수) - READY에서만 가능
         shipment.depart(carrier, trackingNumber);
 
-        // 2) 재고 차감
         outbound.getItems().forEach(item -> {
             InventoryHistory history = item.ship(actor);
             inventoryHistoryRepository.save(history);
         });
 
-        // 3) 출고 확정
         outbound.confirm();
+        return outbound;
     }
 
-    /* ===== 출고 취소 ===== */
-    public void cancelOutbound(Long outboundId) {
+    /* ===== 출고 취소 (출발 전까지만) ===== */
+    public Outbound cancelOutbound(Long outboundId) {
         Outbound outbound = outboundRepository.findById(outboundId)
                 .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
 
-        // 이미 배송 출발했으면 취소 금지
         Shipment shipment = outbound.getShipment();
         if (shipment != null && shipment.getStatus() != ShipmentStatus.READY) {
             throw new IllegalStateException("배송 출발 이후에는 출고 취소가 불가능합니다.");
         }
 
         outbound.cancel();
+        return outbound;
+    }
+
+    /* ===== 출고 조회 ===== */
+    @Transactional(readOnly = true)
+    public Outbound getOutbound(Long outboundId) {
+        return outboundRepository.findById(outboundId)
+                .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
     }
 }
