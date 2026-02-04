@@ -1,4 +1,4 @@
-package com.forerp.erp.common;
+package com.forerp.erp.common.bootstrap;
 
 import com.forerp.erp.user.domain.UserRole;
 import lombok.Getter;
