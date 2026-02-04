@@ -54,10 +54,17 @@ public class Shipment {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    private void validateLink() {
+        if ((inbound == null && outbound == null) || (inbound != null && outbound != null)) {
+            throw new IllegalStateException("Shipment은 inbound 또는 outbound 중 하나에만 연결되어야 합니다.");
+        }
+    }
+
     /* ===== 생성 (출고) ===== */
     public static Shipment createForOutbound(Outbound outbound) {
         Shipment shipment = new Shipment();
         shipment.outbound = outbound;
+        shipment.validateLink();
         shipment.status = ShipmentStatus.READY;
         shipment.createdAt = LocalDateTime.now();
 
@@ -69,6 +76,7 @@ public class Shipment {
     public static Shipment createForInbound(Inbound inbound) {
         Shipment shipment = new Shipment();
         shipment.inbound = inbound;
+        shipment.validateLink();
         shipment.status = ShipmentStatus.READY;
         shipment.createdAt = LocalDateTime.now();
 
@@ -78,6 +86,7 @@ public class Shipment {
 
     /* ===== 배송 출발 ===== */
     public void depart(String carrier, String trackingNumber) {
+        validateLink();
         if (status != ShipmentStatus.READY) {
             throw new IllegalStateException("배송 출발이 불가능한 상태입니다.");
         }
@@ -95,6 +104,7 @@ public class Shipment {
 
     /* ===== 배송 도착 ===== */
     public void arrive() {
+        validateLink();
         if (status != ShipmentStatus.SHIPPING) {
             throw new IllegalStateException("배송 도착이 불가능한 상태입니다.");
         }

@@ -65,16 +65,22 @@ public class Outbound {
         this.shipment = shipment;
     }
 
-    /* ===== 상태 변경 ===== */
-    public void changeStatus(OutboundStatus status) {
-        this.status = status;
-    }
-
     /* ===== 출고 확정 ===== */
     public void confirm() {
+        if (this.status == OutboundStatus.CANCELED) {
+            throw new IllegalStateException("취소된 출고는 확정할 수 없습니다.");
+        }
         if (this.status == OutboundStatus.CONFIRMED) {
             throw new IllegalStateException("이미 확정된 출고입니다.");
         }
         this.status = OutboundStatus.CONFIRMED;
+    }
+
+    /* ===== 출고 취소 ===== */
+    public void cancel() {
+        if (this.status == OutboundStatus.CONFIRMED) {
+            throw new IllegalStateException("확정된 출고는 취소할 수 없습니다.");
+        }
+        this.status = OutboundStatus.CANCELED;
     }
 }

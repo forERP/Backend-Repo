@@ -76,16 +76,19 @@ public class Inbound {
         this.shipment = shipment;
     }
 
-    /* ===== 상태 변경 ===== */
-    public void changeStatus(InboundStatus status) {
-        this.status = status;
-    }
-
     /* ===== 입고 확정 ===== */
     public void confirm() {
         if (this.status == InboundStatus.CONFIRMED) {
             throw new IllegalStateException("이미 확정된 입고입니다.");
         }
         this.status = InboundStatus.CONFIRMED;
+    }
+
+    /* ===== 입고 취소 ===== */
+    public void cancel() {
+        if (this.status == InboundStatus.CONFIRMED) {
+            throw new IllegalStateException("확정된 입고는 취소할 수 없습니다.");
+        }
+        this.status = InboundStatus.CANCELED;
     }
 }

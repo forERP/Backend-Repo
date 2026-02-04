@@ -9,6 +9,7 @@ import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
 import com.forerp.erp.purchase_order.domain.PurchaseOrder;
 import com.forerp.erp.purchase_order.repository.PurchaseOrderRepository;
 import com.forerp.erp.shipment.domain.Shipment;
+import com.forerp.erp.shipment.domain.ShipmentStatus;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.warehouse.domain.Warehouse;
@@ -47,7 +48,6 @@ public class InboundService {
                 .orElseThrow(() -> new IllegalArgumentException("입고를 찾을 수 없습니다."));
 
         inbound.getShipment().depart(carrier, trackingNumber);
-        inbound.changeStatus(InboundStatus.SHIPPING);
     }
 
     /* ===== 배송 도착 → 입고 확정 ===== */
@@ -56,6 +56,9 @@ public class InboundService {
                 .orElseThrow(() -> new IllegalArgumentException("입고를 찾을 수 없습니다."));
 
         Shipment shipment = inbound.getShipment();
+        if (shipment == null) {
+            throw new IllegalStateException("입고에 연결된 배송 정보가 없습니다.");
+        }
         shipment.arrive();
 
         inbound.getItems().forEach(item -> {
@@ -69,5 +72,19 @@ public class InboundService {
         PurchaseOrder po = inbound.getPurchaseOrder();
         po.markReceived();
         purchaseOrderRepository.save(po);
+    }
+
+    /* ===== 입고 취소 ===== */
+    public void cancelInbound(Long inboundId) {
+        Inbound inbound = inboundRepository.findById(inboundId)
+                .orElseThrow(() -> new IllegalArgumentException("입고를 찾을 수 없습니다."));
+
+        // 이미 배송 출발했으면 취소 금지
+        Shipment shipment = inbound.getShipment();
+        if (shipment != null && shipment.getStatus() != ShipmentStatus.READY) {
+            throw new IllegalStateException("배송 출발 이후에는 입고 취소가 불가능합니다.");
+        }
+
+        inbound.cancel();
     }
 }
