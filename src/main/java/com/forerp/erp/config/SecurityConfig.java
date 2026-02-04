@@ -33,7 +33,7 @@ public class SecurityConfig {
         // API 경로별 접근 권한 설정
         http.authorizeHttpRequests(auth -> auth
                         // 로그인 API와 초기 사용자 설정 API는 토큰 없이도 접근 허용
-                        .requestMatchers("/api/users/login", "/api/users/setup/**").permitAll()
+                        .requestMatchers("/api/users/login", "/api/users/setup/**", "/api/attendance/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
