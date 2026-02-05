@@ -16,6 +16,7 @@ app:
       password: admin
       name: System Admin
       role: HQ_ADMIN
+      store-code: 000
 ---
 spring:
   config:

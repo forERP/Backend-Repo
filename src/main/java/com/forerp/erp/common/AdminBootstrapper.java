@@ -40,6 +40,7 @@ public class AdminBootstrapper implements ApplicationRunner {
                                 .name(HQ_STORE_NAME)
                                 .storeType(StoreType.HQ)
                                 .status(StoreStatus.OPEN)
+                                .storeCode(props.getStoreCode())
                                 .build()
                 ));
     }
