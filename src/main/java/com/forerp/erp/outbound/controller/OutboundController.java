@@ -3,10 +3,12 @@ package com.forerp.erp.outbound.controller;
 import com.forerp.erp.outbound.domain.Outbound;
 import com.forerp.erp.outbound.dto.OutboundConfirmRequest;
 import com.forerp.erp.outbound.dto.OutboundCreateRequest;
+import com.forerp.erp.outbound.dto.OutboundListResponse;
 import com.forerp.erp.outbound.dto.OutboundResponse;
 import com.forerp.erp.outbound.service.OutboundService;
 import com.forerp.erp.user.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -71,5 +73,39 @@ public class OutboundController {
     public ResponseEntity<OutboundResponse> getOutbound(@PathVariable Long outboundId) {
         Outbound outbound = outboundService.getOutbound(outboundId);
         return ResponseEntity.ok(OutboundResponse.from(outbound));
+    }
+
+    @Operation(summary = "출고 목록 조회/검색",
+            description = """
+            - storeId/warehouseId/status/from/to는 선택
+            - from/to 형식: yyyy-MM-dd
+            - to는 '포함' 조건(내부적으로 to+1일 미만으로 조회)
+            """)
+    @ApiResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = OutboundListResponse.class)))
+    @GetMapping
+    public ResponseEntity<OutboundListResponse> listOutbounds(
+            @Parameter(description = "매장 ID(선택)", example = "1")
+            @RequestParam(required = false) Long storeId,
+
+            @Parameter(description = "창고 ID(선택)", example = "2")
+            @RequestParam(required = false) Long warehouseId,
+
+            @Parameter(description = "출고 상태(선택): CREATED/CONFIRMED/CANCELED", example = "CREATED")
+            @RequestParam(required = false) String status,
+
+            @Parameter(description = "조회 시작일(선택), yyyy-MM-dd", example = "2026-02-01")
+            @RequestParam(required = false) String from,
+
+            @Parameter(description = "조회 종료일(선택), yyyy-MM-dd", example = "2026-02-28")
+            @RequestParam(required = false) String to,
+
+            @Parameter(description = "페이지(0부터)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(outboundService.listOutbounds(storeId, warehouseId, status, from, to, page, size));
     }
 }

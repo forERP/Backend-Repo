@@ -8,7 +8,9 @@ import com.forerp.erp.order.repository.OrderItemRepository;
 import com.forerp.erp.order.repository.OrderRepository;
 import com.forerp.erp.outbound.domain.Outbound;
 import com.forerp.erp.outbound.domain.OutboundItem;
+import com.forerp.erp.outbound.domain.OutboundStatus;
 import com.forerp.erp.outbound.dto.OutboundCreateRequest;
+import com.forerp.erp.outbound.dto.OutboundListResponse;
 import com.forerp.erp.outbound.repository.OutboundRepository;
 import com.forerp.erp.product.domain.Product;
 import com.forerp.erp.product.repository.ProductRepository;
@@ -22,9 +24,14 @@ import com.forerp.erp.user.domain.User;
 import com.forerp.erp.warehouse.domain.Warehouse;
 import com.forerp.erp.warehouse.repository.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -114,5 +121,83 @@ public class OutboundService {
     public Outbound getOutbound(Long outboundId) {
         return outboundRepository.findById(outboundId)
                 .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
+    }
+
+    /* ===== 출고 목록 조회 ===== */
+    @Transactional(readOnly = true)
+    public OutboundListResponse listOutbounds(
+            Long storeId,
+            Long warehouseId,
+            String status,
+            String from,
+            String to,
+            int page,
+            int size
+    ) {
+        OutboundStatus st = parseOutboundStatus(status);
+        LocalDateTime fromDt = parseFromDate(from);
+        LocalDateTime toDt = parseToDateExclusive(to);
+
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<Outbound> result = outboundRepository.search(storeId, st, warehouseId, fromDt, toDt, pageable);
+
+        List<OutboundListResponse.OutboundListItem> content = result.getContent().stream()
+                .map(o -> {
+                    Long whId = extractWarehouseId(o); // 아래 helper
+                    return new OutboundListResponse.OutboundListItem(
+                            o.getId(),
+                            o.getOrder().getId(),
+                            o.getStore().getId(),
+                            whId,
+                            o.getStatus().name(),
+                            o.getCreatedAt(),
+                            o.getShipment() == null ? null : o.getShipment().getStatus().name()
+                    );
+                })
+                .toList();
+
+        return new OutboundListResponse(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
+    }
+
+    private Long extractWarehouseId(Outbound o) {
+        // 현재 create 시 warehouseId가 단일로 고정되므로 items 중 아무거나의 warehouseId를 대표로 사용
+        if (o.getItems() == null || o.getItems().isEmpty()) return null;
+        StoreProduct sp = o.getItems().get(0).getStoreProduct();
+        if (sp == null || sp.getWarehouse() == null) return null;
+        return sp.getWarehouse().getId();
+    }
+
+    private OutboundStatus parseOutboundStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        try {
+            return OutboundStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 status 입니다: " + status
+                    + " (허용: CREATED, CONFIRMED, CANCELED)");
+        }
+    }
+
+    private LocalDateTime parseFromDate(String from) {
+        if (from == null || from.isBlank()) return null;
+        try {
+            return LocalDate.parse(from.trim()).atStartOfDay();
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("from 형식이 올바르지 않습니다. yyyy-MM-dd");
+        }
+    }
+
+    private LocalDateTime parseToDateExclusive(String to) {
+        if (to == null || to.isBlank()) return null;
+        try {
+            return LocalDate.parse(to.trim()).plusDays(1).atStartOfDay();
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("to 형식이 올바르지 않습니다. yyyy-MM-dd");
+        }
     }
 }
