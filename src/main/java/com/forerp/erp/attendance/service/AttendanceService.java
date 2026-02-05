@@ -4,6 +4,7 @@ import com.forerp.erp.attendance.domain.Attendance;
 import com.forerp.erp.attendance.dto.AttendanceDto;
 import com.forerp.erp.attendance.repository.AttendanceRepository;
 import com.forerp.erp.attendance.service.support.AttendanceReader;
+import com.forerp.erp.attendance.service.support.AttendanceResponseMapper;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final AttendanceReader attendanceReader;
+    private final AttendanceResponseMapper mapper;
 
     // 출근 처리(POS)
     public AttendanceDto.Response clockIn(AttendanceDto.ClockInRequest request) {
@@ -33,7 +35,9 @@ public class AttendanceService {
                 .clockIn(LocalDateTime.now())
                 .build();
 
-        return toResponse(attendanceRepository.save(attendance));
+        Attendance saved = attendanceRepository.save(attendance);
+
+        return mapper.toResponse(saved);
     }
 
     // 퇴근 처리(POS)
@@ -45,7 +49,7 @@ public class AttendanceService {
 
         attendance.recordClockOut();
 
-        return toResponse(attendance);
+        return mapper.toResponse(attendance);
     }
 
     // 휴가 등록
@@ -66,30 +70,8 @@ public class AttendanceService {
     public List<AttendanceDto.HistoryResponse> getStoreAttendanceHistory(Long storeId, LocalDate startDate, LocalDate endDate){
         return attendanceReader.getHistory(storeId, startDate, endDate)
                 .stream()
-                .map(this::toHistoryResponse)
+                .map(mapper::toHistoryResponse)
                 .collect(Collectors.toList());
-    }
-
-    private AttendanceDto.HistoryResponse toHistoryResponse(Attendance attendance){
-        return new AttendanceDto.HistoryResponse(
-                attendance.getId(),
-                attendance.getUser().getId(),
-                attendance.getUser().getName(),
-                attendance.getWorkDate(),
-                attendance.getClockIn(),
-                attendance.getClockOut(),
-                attendance.getStatus()
-        );
-    }
-
-    private AttendanceDto.Response toResponse(Attendance attendance){
-        return new AttendanceDto.Response(
-                attendance.getId(),
-                attendance.getUser().getName(),
-                attendance.getClockIn(),
-                attendance.getClockOut(),
-                attendance.getStatus()
-        );
     }
 }
 
