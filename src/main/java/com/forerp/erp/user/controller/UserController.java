@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -39,6 +40,15 @@ public class UserController {
         response.setHeader("Authorization", "Bearer " + loginResponse.getToken());
 
         return ResponseEntity.ok(loginResponse);
+    }
+
+    // POS 로그인
+    @PostMapping("/login/pos")
+    public ResponseEntity<LoginResponseDto> loginPos(@RequestBody Map<String, String> request){
+        Long storeId = Long.parseLong(request.get("storeId"));
+        String employeeCode = request.get("employeeCode");
+
+        return ResponseEntity.ok(userService.loginPos(storeId, employeeCode));
     }
 
     // 회원 정보 조회

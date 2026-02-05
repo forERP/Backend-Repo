@@ -10,7 +10,9 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"store_id", "employee_code"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
@@ -23,7 +25,7 @@ public class User {
     @Column(name = "login_id", nullable = false, length = 50, unique = true)
     private String loginId;
 
-    @Column(name = "employee_code", nullable = false, length = 50, unique = true)
+    @Column(name = "employee_code", nullable = false, length = 50)
     private String employeeCode;
 
     @Column(name = "password_hash", nullable = false)

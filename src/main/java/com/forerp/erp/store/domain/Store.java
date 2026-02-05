@@ -19,6 +19,9 @@ public class Store {
     @Column(name = "store_id")
     private Long id;
 
+    @Column(name = "store_code", nullable = false, length = 10, unique = true)
+    private String storeCode;
+
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -39,8 +42,9 @@ public class Store {
     }
 
     @Builder
-    private Store(String name, StoreType storeType, StoreStatus status) {
+    private Store(String name, StoreType storeType, StoreStatus status, String storeCode) {
         this.name = name;
+        this.storeCode = storeCode;
         this.storeType = (storeType == null) ? StoreType.STORE : storeType;
         this.status = (status == null) ? StoreStatus.OPEN : status;
     }
@@ -60,4 +64,5 @@ public class Store {
     public void deactivate() {
         this.status = StoreStatus.INACTIVE;
     }
+
 }
