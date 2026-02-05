@@ -8,6 +8,8 @@ import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.warehouse.domain.Warehouse;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -20,6 +22,9 @@ import java.time.LocalDateTime;
                 )
         }
 )
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class StoreProduct {
 
     @Id
@@ -76,6 +81,20 @@ public class StoreProduct {
 
     private boolean calculateSellable() {
         return saleStatus == SaleStatus.ON && quantity > 0;
+    }
+
+    /* ===== 생성 ===== */
+    public static StoreProduct create(Store store, Warehouse warehouse, Product product) {
+        StoreProduct sp = new StoreProduct();
+        sp.store = store;
+        sp.warehouse = warehouse;
+        sp.product = product;
+        sp.quantity = 0;
+        sp.salePrice = BigDecimal.ZERO;
+        sp.saleStatus = SaleStatus.ON;
+        sp.stockThreshold = 0;
+        sp.isSellable = false;
+        return sp;
     }
 
     /* ===== 재고 감소 ===== */

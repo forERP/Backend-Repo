@@ -1,4 +1,4 @@
-package com.forerp.erp.common;
+package com.forerp.erp.common.bootstrap;
 
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.store.domain.StoreStatus;

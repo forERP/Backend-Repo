@@ -1,19 +1,26 @@
 package com.forerp.erp.outbound.service;
 
+import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
-import com.forerp.erp.order.domain.Order;
 import com.forerp.erp.outbound.domain.Outbound;
-import com.forerp.erp.outbound.domain.OutboundItem;
+import com.forerp.erp.outbound.domain.OutboundStatus;
+import com.forerp.erp.outbound.dto.OutboundCreateRequest;
+import com.forerp.erp.outbound.dto.OutboundListResponse;
 import com.forerp.erp.outbound.repository.OutboundRepository;
+import com.forerp.erp.outbound.service.support.OutboundBuilder;
+import com.forerp.erp.outbound.service.support.OutboundLoader;
 import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.shipment.domain.ShipmentStatus;
-import com.forerp.erp.store.domain.Store;
+import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,48 +31,93 @@ public class OutboundService {
     private final OutboundRepository outboundRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
 
-    /* ===== 출고 생성 ===== */
-    public Outbound createOutbound(Order order, Store store, List<OutboundItem> items) {
-        Outbound outbound = Outbound.create(order, store, items);
-        Shipment.createForOutbound(outbound);
+    private final OutboundLoader loader;
+    private final OutboundBuilder builder;
+
+    /* 출고 생성 */
+    public Outbound createOutbound(OutboundCreateRequest req) {
+        Outbound outbound = builder.buildOutboundAggregate(req);
         return outboundRepository.save(outbound);
     }
 
-    /* ===== 배송 출발 → 출고 확정 ===== */
-    @Transactional
-    public void confirmOutbound(Long outboundId, User actor, String carrier, String trackingNumber) {
-        Outbound outbound = outboundRepository.findById(outboundId)
-                .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
+    /* 배송 출발 + 재고 차감 + 출고 확정 */
+    public Outbound confirmOutbound(Long outboundId, User actor, String carrier, String trackingNumber) {
+        Outbound outbound = loader.loadOutbound(outboundId);
+        Shipment shipment = loader.requireShipment(outbound);
 
-        Shipment shipment = outbound.getShipment();
-        if (shipment == null) {
-            throw new IllegalStateException("출고에 연결된 배송 정보가 없습니다.");
-        }
-
-        // 1) 배송 출발(송장 필수) - READY에서만 가능
         shipment.depart(carrier, trackingNumber);
 
-        // 2) 재고 차감
         outbound.getItems().forEach(item -> {
             InventoryHistory history = item.ship(actor);
             inventoryHistoryRepository.save(history);
         });
 
-        // 3) 출고 확정
         outbound.confirm();
+        return outbound;
     }
 
-    /* ===== 출고 취소 ===== */
-    public void cancelOutbound(Long outboundId) {
-        Outbound outbound = outboundRepository.findById(outboundId)
-                .orElseThrow(() -> new IllegalArgumentException("출고를 찾을 수 없습니다."));
+    /* 출고 취소 (출발 전까지만) */
+    public Outbound cancelOutbound(Long outboundId) {
+        Outbound outbound = loader.loadOutbound(outboundId);
 
-        // 이미 배송 출발했으면 취소 금지
         Shipment shipment = outbound.getShipment();
         if (shipment != null && shipment.getStatus() != ShipmentStatus.READY) {
             throw new IllegalStateException("배송 출발 이후에는 출고 취소가 불가능합니다.");
         }
 
         outbound.cancel();
+        return outbound;
+    }
+
+    /* 출고 단건 조회 */
+    @Transactional(readOnly = true)
+    public Outbound getOutbound(Long outboundId) {
+        return loader.loadOutbound(outboundId);
+    }
+
+    /* 출고 목록 조회 */
+    @Transactional(readOnly = true)
+    public OutboundListResponse listOutbounds(
+            Long storeId,
+            Long warehouseId,
+            String status,
+            String from,
+            String to,
+            int page,
+            int size
+    ) {
+        OutboundStatus st = QueryParamParser.parseEnumOrNull(status, OutboundStatus.class, "status");
+        LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
+        LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
+
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<Outbound> result = outboundRepository.search(storeId, st, warehouseId, fromDt, toDt, pageable);
+
+        List<OutboundListResponse.OutboundListItem> content = result.getContent().stream()
+                .map(o -> new OutboundListResponse.OutboundListItem(
+                        o.getId(),
+                        o.getOrder().getId(),
+                        o.getStore().getId(),
+                        extractWarehouseId(o),
+                        o.getStatus().name(),
+                        o.getCreatedAt(),
+                        o.getShipment() == null ? null : o.getShipment().getStatus().name()
+                ))
+                .toList();
+
+        return new OutboundListResponse(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
+    }
+
+    private Long extractWarehouseId(Outbound o) {
+        if (o.getItems() == null || o.getItems().isEmpty()) return null;
+        StoreProduct sp = o.getItems().get(0).getStoreProduct();
+        if (sp == null || sp.getWarehouse() == null) return null;
+        return sp.getWarehouse().getId();
     }
 }
