@@ -23,9 +23,9 @@ public class AttendanceService {
     private final UserRepository userRepository;
 
     // 출근 처리(POS)
-    public AttendanceDto.Response clockIn(String employeeCode) {
-        User user = userRepository.findByEmployeeCode(employeeCode)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 직원 코드입니다."));
+    public AttendanceDto.Response clockIn(AttendanceDto.ClockInRequest request) {
+        User user = userRepository.findByStore_IdAndEmployeeCode(request.getStoreId(), request.getEmployeeCode())
+                .orElseThrow(() -> new IllegalArgumentException("해당 매장의 직원을 찾을 수 없습니다."));
 
         LocalDate today = LocalDate.now();
 
@@ -44,12 +44,12 @@ public class AttendanceService {
     }
 
     // 퇴근 처리(POS)
-    public AttendanceDto.Response clockOut(String employeeCode) {
-        User user = userRepository.findByEmployeeCode(employeeCode)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 직원 코드입니다."));
+    public AttendanceDto.Response clockOut(AttendanceDto.ClockInRequest request) {
+        User user = userRepository.findByStore_IdAndEmployeeCode(request.getStoreId(), request.getEmployeeCode())
+                .orElseThrow(() -> new IllegalArgumentException("해당 매장의 직원을 찾을 수 없습니다."));
 
         Attendance attendance = attendanceRepository.findTopByUser_IdAndClockOutIsNullOrderByClockInDesc(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("현재 근무 중인 상태가 아닙니다. 먼저 출근을 해주세요."));
+                .orElseThrow(() -> new IllegalArgumentException("현재 근무 중인 상태가 아닙니다."));
 
         attendance.recordClockOut();
 

@@ -12,13 +12,14 @@ public class AttendanceDto {
 
     @Getter
     @NoArgsConstructor
-    public static class ClockInRequest{
+    public static class ClockInRequest {
+        private Long storeId;
         private String employeeCode;
     }
 
     @Getter
     @AllArgsConstructor
-    public static class Response{
+    public static class Response {
         private Long attendanceId;
         private String userName;
         private LocalDateTime clockIn;
@@ -48,9 +49,10 @@ public class AttendanceDto {
 
     @Getter
     @NoArgsConstructor
-        public static class LeaveRequest {
-            private Long userId;
-            private LocalDate leaveDate;
-        }
+    public static class LeaveRequest {
+        private Long userId;
+        private LocalDate leaveDate;
     }
+
+}
 

@@ -20,13 +20,13 @@ public class AttendanceController {
     // POS 출근
     @PostMapping("/clock_in")
     public ResponseEntity<AttendanceDto.Response> clockIn(@RequestBody AttendanceDto.ClockInRequest request) {
-        return ResponseEntity.ok(attendanceService.clockIn(request.getEmployeeCode()));
+        return ResponseEntity.ok(attendanceService.clockIn(request));
     }
 
     // POS 퇴근
     @PostMapping("/clock_out")
     public ResponseEntity<AttendanceDto.Response> clockOut(@RequestBody AttendanceDto.ClockInRequest request) {
-        return ResponseEntity.ok(attendanceService.clockOut(request.getEmployeeCode()));
+        return ResponseEntity.ok(attendanceService.clockOut(request));
     }
 
     // 관리자용 근태 기록 조회

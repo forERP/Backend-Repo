@@ -35,16 +35,16 @@ public class UserService {
         if (userRepository.existsByLoginId(request.getLoginId())) {
             throw new IllegalArgumentException("이미 사용 중인 로그인 ID 입니다.");
         }
-        if (userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
-            throw new IllegalArgumentException("이미 사용 중인 직원코드 입니다.");
-        }
 
         Store store = storeRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
 
+        long employeeCount = userRepository.countByStore(store);
+        String generatedEmployeeCode = String.format("%02d", employeeCount + 1);
+
         User user = User.builder()
                 .loginId(request.getLoginId())
-                .employeeCode(request.getEmployeeCode())
+                .employeeCode(generatedEmployeeCode)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
                 .store(store)
@@ -124,6 +124,21 @@ public class UserService {
         String token = jwtUtil.generateToken(user.getLoginId());
         return new LoginResponseDto(token, user.getRole(), user.getId());
     }
+
+    // POS 로그인
+    public LoginResponseDto loginPos(Long storeId, String employeeCode){
+        User user = userRepository.findByStore_IdAndEmployeeCode(storeId, employeeCode)
+                .orElseThrow(() -> new IllegalArgumentException("해당 매장에 존재하지 않는 직원입니다."));
+
+        if(user.getStatus() != UserStatus.ACTIVE){
+            throw new IllegalArgumentException("퇴사한 직원입니다.");
+        }
+
+        String token = jwtUtil.generateToken(user.getLoginId());
+
+        return new LoginResponseDto(token, user.getRole(), user.getId());
+    }
+
 
     // 회원 정보 조회
     public UserResponseDto getUser(Long id) {
