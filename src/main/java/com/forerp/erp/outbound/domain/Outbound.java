@@ -67,13 +67,18 @@ public class Outbound {
 
     /* ===== 출고 확정 ===== */
     public void confirm() {
-        if (this.status == OutboundStatus.CANCELED) {
-            throw new IllegalStateException("취소된 출고는 확정할 수 없습니다.");
-        }
-        if (this.status == OutboundStatus.CONFIRMED) {
-            throw new IllegalStateException("이미 확정된 출고입니다.");
+        if (this.status != OutboundStatus.CREATED) {
+            throw new IllegalStateException("출고 확정 처리 가능한 출고 상태가 아닙니다.");
         }
         this.status = OutboundStatus.CONFIRMED;
+    }
+
+    /* ===== 출고 완료 ===== */
+    public void arrive() {
+        if (this.status != OutboundStatus.CONFIRMED) {
+            throw new IllegalStateException("배송 도착 처리 가능한 출고 상태가 아닙니다.");
+        }
+        this.status = OutboundStatus.ARRIVED;
     }
 
     /* ===== 출고 취소 ===== */

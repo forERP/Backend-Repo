@@ -39,11 +39,11 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
-    /* ===== 생성 로직 ===== */
+    /* ===== 생성 ===== */
     public static Order create(Store store, List<OrderItem> items) {
         Order order = new Order();
         order.store = store;
-        order.status = OrderStatus.CREATED;
+        order.status = OrderStatus.PLACED;
         order.orderedAt = LocalDateTime.now();
 
         items.forEach(item -> {
@@ -56,5 +56,37 @@ public class Order {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return order;
+    }
+
+    /* ===== 준비 완료 ===== */
+    public void markPrepared() {
+        if (this.status != OrderStatus.PLACED) {
+            throw new IllegalStateException("준비 완료 가능한 주문 상태가 아닙니다.");
+        }
+        this.status = OrderStatus.PREPARED;
+    }
+
+    /* ===== 배송 출발 ===== */
+    public void markShipped() {
+        if (this.status != OrderStatus.PREPARED) {
+            throw new IllegalStateException("배송 출발 가능한 주문 상태가 아닙니다.");
+        }
+        this.status = OrderStatus.SHIPPED;
+    }
+
+    /* ===== 배송 도착 ===== */
+    public void markArrived() {
+        if (this.status != OrderStatus.SHIPPED) {
+            throw new IllegalStateException("도착 처리 가능한 주문 상태가 아닙니다.");
+        }
+        this.status = OrderStatus.ARRIVED;
+    }
+
+    /* ===== 취소 ===== */
+    public void cancel() {
+        if (this.status != OrderStatus.PLACED) {
+            throw new IllegalStateException("확정 이후 단계의 주문은 취소할 수 없습니다.");
+        }
+        this.status = OrderStatus.CANCELED;
     }
 }

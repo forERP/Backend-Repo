@@ -37,7 +37,7 @@ public class OutboundController {
     }
 
     @Operation(
-            summary = "출고 확정(배송 출발 + 재고 차감 + 출고 확정)",
+            summary = "출고 확정(배송 출발 + 재고 차감)",
             description = "Shipment.depart(READY→SHIPPING) 후 재고 차감 및 Outbound CONFIRMED"
     )
     @ApiResponse(responseCode = "200", description = "OK",
@@ -54,6 +54,18 @@ public class OutboundController {
                 request.getCarrier(),
                 request.getTrackingNumber()
         );
+        return ResponseEntity.ok(OutboundResponse.from(outbound));
+    }
+
+    @Operation(
+            summary = "배송 도착 처리(출고 완료)",
+            description = "Shipment.arrive(SHIPPING→ARRIVED) + Order( SHIPPED→ARRIVED ) + Outbound(CONFIRMED→ARRIVED)"
+    )
+    @ApiResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = OutboundResponse.class)))
+    @PostMapping("/{outboundId}/shipment/arrive")
+    public ResponseEntity<OutboundResponse> arriveShipment(@PathVariable Long outboundId) {
+        Outbound outbound = outboundService.arriveOutbound(outboundId);
         return ResponseEntity.ok(OutboundResponse.from(outbound));
     }
 

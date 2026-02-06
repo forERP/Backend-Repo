@@ -5,6 +5,7 @@ import com.forerp.erp.order.domain.OrderItem;
 import com.forerp.erp.order.repository.OrderItemRepository;
 import com.forerp.erp.order.repository.OrderRepository;
 import com.forerp.erp.outbound.domain.Outbound;
+import com.forerp.erp.outbound.domain.OutboundStatus;
 import com.forerp.erp.outbound.repository.OutboundRepository;
 import com.forerp.erp.product.domain.Product;
 import com.forerp.erp.shipment.domain.Shipment;
@@ -71,5 +72,11 @@ public class OutboundLoader {
             throw new IllegalStateException("출고에 연결된 배송 정보가 없습니다.");
         }
         return shipment;
+    }
+
+    public void requireOutboundStatus(Outbound outbound, OutboundStatus expected) {
+        if (outbound.getStatus() != expected) {
+            throw new IllegalStateException("출고 상태가 올바르지 않습니다. expected=" + expected);
+        }
     }
 }
