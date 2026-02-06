@@ -1,6 +1,6 @@
 package com.forerp.erp.store.service;
 
-import com.forerp.erp.common.audit.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogService;
 import com.forerp.erp.common.jwt.SecurityUtil;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.store.domain.StoreStatus;
