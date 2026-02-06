@@ -38,6 +38,8 @@ public class Warehouse {
     @Column(nullable = false, length = 50)
     private String name;
 
+    // 위치 정보 없어도 되나
+
     @Column(nullable = false)
     private boolean active;
 

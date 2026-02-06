@@ -34,4 +34,7 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
             @Param("toDt") LocalDateTime toDt,
             Pageable pageable
     );
+
+    // 주문 취소 제약용
+    boolean existsByOrder_Id(Long orderId);
 }

@@ -1,10 +1,9 @@
 package com.forerp.erp.order.domain;
 
 public enum OrderStatus {
-    CREATED,
-    PAID,
-    PREPARING,
+    PLACED,
+    PREPARED,
     SHIPPED,
-    DELIVERED,
-    CANCELED,
+    ARRIVED,
+    CANCELED
 }

@@ -37,6 +37,9 @@ public class OutboundService {
     /* 출고 생성 */
     public Outbound createOutbound(OutboundCreateRequest req) {
         Outbound outbound = builder.buildOutboundAggregate(req);
+
+        outbound.getOrder().markPrepared();
+
         return outboundRepository.save(outbound);
     }
 
@@ -53,6 +56,24 @@ public class OutboundService {
         });
 
         outbound.confirm();
+        outbound.getOrder().markShipped();
+
+        return outbound;
+    }
+
+    /* 배송 도착 + 주문 도착 + 출고 ARRIVED */
+    public Outbound arriveOutbound(Long outboundId) {
+        Outbound outbound = loader.loadOutbound(outboundId);
+        Shipment shipment = loader.requireShipment(outbound);
+        loader.requireOutboundStatus(outbound, outbound.getStatus());
+
+        // 배송 도착 (SHIPPING -> ARRIVED)
+        shipment.arrive();
+        // 주문 도착 (SHIPPED -> ARRIVED)
+        outbound.getOrder().markArrived();
+        // 출고 도착 (CONFIRMED -> ARRIVED)
+        outbound.arrive();
+
         return outbound;
     }
 
