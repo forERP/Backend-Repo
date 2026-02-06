@@ -1,4 +1,4 @@
-package com.forerp.erp.common.audit;
+package com.forerp.erp.auditlog;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
