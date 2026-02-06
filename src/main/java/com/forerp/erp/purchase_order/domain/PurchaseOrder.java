@@ -105,7 +105,7 @@ public class PurchaseOrder {
         if (this.status == PurchaseOrderStatus.ORDERED) {
             throw new IllegalStateException("이미 발주된 주문은 취소할 수 없습니다.");
         }
-        this.status = PurchaseOrderStatus.CANCELLED;
+        this.status = PurchaseOrderStatus.CANCELED;
     }
 
     /* ===== 발주 입고 완료 ===== */
