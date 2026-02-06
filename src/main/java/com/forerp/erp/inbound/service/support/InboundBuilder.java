@@ -5,6 +5,8 @@ import com.forerp.erp.inbound.domain.InboundItem;
 import com.forerp.erp.inbound.dto.InboundCreateRequest;
 import com.forerp.erp.product.domain.Product;
 import com.forerp.erp.purchase_order.domain.PurchaseOrder;
+import com.forerp.erp.purchase_order.domain.PurchaseOrderItem;
+import com.forerp.erp.purchase_order.domain.PurchaseOrderStatus;
 import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
@@ -21,12 +23,17 @@ public class InboundBuilder {
     private final InboundLoader loader;
 
     public Inbound buildInboundAggregate(InboundCreateRequest req) {
-        PurchaseOrder po = loader.loadPurchaseOrder(req.getPurchaseOrderId());
-        Store store = loader.loadStore(req.getStoreId());
-        Warehouse warehouse = loader.loadWarehouse(req.getWarehouseId());
+        PurchaseOrder po = loader.loadPurchaseOrderForInboundCreate(req.getPurchaseOrderId());
 
-        List<InboundItem> items = req.getItems().stream()
-                .map(i -> buildInboundItem(store, warehouse, i))
+        if (po.getStatus() != PurchaseOrderStatus.ORDERED) {
+            throw new IllegalStateException("ORDERED 상태의 발주만 입고를 생성할 수 있습니다.");
+        }
+
+        Store store = po.getStore();
+        Warehouse warehouse = po.getWarehouse();
+
+        List<InboundItem> items = po.getItems().stream()
+                .map(oi -> buildInboundItem(store, warehouse, oi))
                 .toList();
 
         Inbound inbound = Inbound.create(po, store, warehouse, items);
@@ -34,13 +41,9 @@ public class InboundBuilder {
         return inbound;
     }
 
-    private InboundItem buildInboundItem(
-            Store store,
-            Warehouse warehouse,
-            InboundCreateRequest.InboundCreateItem i
-    ) {
-        Product product = loader.loadProduct(i.getProductId());
+    private InboundItem buildInboundItem(Store store, Warehouse warehouse, PurchaseOrderItem oi) {
+        Product product = oi.getProduct();
         StoreProduct sp = loader.loadOrCreateStoreProduct(store, warehouse, product);
-        return InboundItem.create(product, sp, i.getQty());
+        return InboundItem.create(product, sp, oi.getQuantity());
     }
 }

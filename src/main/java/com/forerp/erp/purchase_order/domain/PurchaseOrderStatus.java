@@ -4,5 +4,5 @@ public enum PurchaseOrderStatus {
     CREATED,
     ORDERED,
     RECEIVED,
-    CANCELLED
+    CANCELED
 }
