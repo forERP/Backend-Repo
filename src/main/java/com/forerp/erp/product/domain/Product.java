@@ -67,4 +67,17 @@ public class Product {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    // 상품 정보 수정
+    public void update(String name, ProductCategory category, BigDecimal price, String description, String imageUrl){
+        if(name != null) this.name = name;
+        if(category != null) this.category = category;
+        if(price != null) this.msrpPrice = price;
+        if(description != null) this.description = description;
+        if(imageUrl != null) this.imageUrl = imageUrl;
+    }
+
+    public void discontinue(){
+        this.status = ProductStatus.DISCONTINUED;
+    }
 }

@@ -1,0 +1,44 @@
+package com.forerp.erp.store.controller;
+
+import com.forerp.erp.store.dto.StoreDto;
+import com.forerp.erp.store.service.StoreService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/stores")
+@RequiredArgsConstructor
+public class StoreController {
+
+    private final StoreService storeService;
+
+    // 매장 생성
+    @PostMapping
+    public ResponseEntity<StoreDto.Response> createStore(@RequestBody @Valid StoreDto.CreateRequest request){
+        return ResponseEntity.ok(storeService.createStore(request));
+    }
+
+    // 전체 매장 조회
+    @GetMapping
+    public ResponseEntity<List<StoreDto.Response>> getAllStores(){
+        return ResponseEntity.ok(storeService.getAllStores());
+    }
+
+    // 단건 조회
+    @GetMapping("/{id}")
+    public ResponseEntity<StoreDto.Response> getStore(@PathVariable Long id){
+        return ResponseEntity.ok(storeService.getStore(id));
+    }
+
+    // 상태 변경
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<StoreDto.Response> updateStatus(
+            @PathVariable Long id,
+            @RequestBody StoreDto.UpdateStatusRequest request){
+        return ResponseEntity.ok(storeService.updateStoreStatus(id, request));
+    }
+}
