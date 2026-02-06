@@ -33,12 +33,12 @@ public interface StoreProductRepository extends JpaRepository<StoreProduct, Long
             Long storeId, Long productId
     );
 
-    @Query("SELECT new com.forerp.erp.storeproduct.dto.StoreProductListResponseDto("+
-        "p.id, p.sku, p.name, p.category.name, p.msrpPrice," +
-        "sp.id, sp.quantity, sp.saleStatus, sp.salePrice)" +
-        "FROM Product p " +
-        "LEFT JOIN StoreProduct sp ON p.id = sp.product.id AND sp.store.id = :storeId" +
-        "WHERE p.status = 'ACTIVE'")
+    @Query("SELECT new com.forerp.erp.store.dto.StoreProductListResponseDto(" +
+            "p.id, p.sku, p.name, p.category.name, p.msrpPrice, " +
+            "sp.id, sp.quantity, sp.saleStatus, sp.salePrice) " +
+            " FROM Product p " +
+            " LEFT JOIN StoreProduct sp ON p.id = sp.product.id AND sp.store.id = :storeId " +
+            " WHERE p.status = 'ACTIVE'")
     Page<StoreProductListResponseDto> findAllProductsWithStoreInfo(
             @Param("storeId") Long storeId,
             Pageable pageable
