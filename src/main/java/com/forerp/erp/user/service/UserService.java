@@ -1,10 +1,9 @@
 package com.forerp.erp.user.service;
 
-import com.forerp.erp.common.audit.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogService;
 import com.forerp.erp.common.jwt.JwtUtil;
 import com.forerp.erp.common.jwt.SecurityUtil;
 import com.forerp.erp.store.domain.Store;
-import com.forerp.erp.store.repository.StoreRepository;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.domain.UserStatus;
 import com.forerp.erp.user.dto.*;

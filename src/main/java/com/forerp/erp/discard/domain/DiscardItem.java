@@ -5,11 +5,14 @@ import com.forerp.erp.inventory.domain.RefType;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "discard_items")
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DiscardItem {
 
     @Id
@@ -28,21 +31,12 @@ public class DiscardItem {
     @Column(nullable = false)
     private int quantity;
 
-    protected DiscardItem() {
-    }
-
     /* ===== 생성 로직 ===== */
-    public static DiscardItem create(
-            Discard discard,
-            StoreProduct storeProduct,
-            int quantity
-    ) {
+    public static DiscardItem create(StoreProduct storeProduct, int quantity) {
         if (quantity <= 0) {
             throw new IllegalArgumentException("폐기 수량은 0보다 커야 합니다.");
         }
-
         DiscardItem item = new DiscardItem();
-        item.discard = discard;
         item.storeProduct = storeProduct;
         item.quantity = quantity;
         return item;
@@ -54,6 +48,10 @@ public class DiscardItem {
 
     /* ===== 폐기 실행 → 재고 감소 + 히스토리 생성 ===== */
     public InventoryHistory discard(User actor) {
+        if (this.discard == null || this.discard.getId() == null) {
+            throw new IllegalStateException("폐기 문서에 연결되지 않은 항목입니다.");
+        }
+
         return storeProduct.decreaseStock(
                 quantity,
                 RefType.DISCARD,
