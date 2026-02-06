@@ -4,6 +4,8 @@ import com.forerp.erp.product.domain.*;
 import com.forerp.erp.product.dto.*;
 import com.forerp.erp.product.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,58 @@ public class ProductService {
         prd.updateSku(sku);
 
         return new ProductCreateResponseDto(prd.getId(), sku);
+    }
+
+    // 관리자용 상품 목록 단순 조회
+    @Transactional(readOnly = true)
+    public Page<ProductListResponseDto> getAllProducts(Pageable pageable){
+        return productRepository.findAll(pageable)
+                .map(page -> new ProductListResponseDto(
+                        page.getId(),
+                        page.getSku(),
+                        page.getName(),
+                        page.getCategory().getName(),
+                        page.getMsrpPrice(),
+                        page.getStatus()
+                ));
+    }
+
+    // 단건 조회
+    public ProductDto.DetailResponse getProduct(Long id){
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+        return new ProductDto.DetailResponse(product);
+    }
+
+    // 상품 수정
+    public ProductDto.DetailResponse updateProduct(Long id, ProductDto.UpdateRequest request){
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+
+        // 카테고리 변경 시 조회
+        ProductCategory category = null;
+        if(request.getCategoryId() != null){
+            category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리"));
+        }
+
+        product.update(
+                request.getName(),
+                category,
+                request.getMsrpPrice(),
+                request.getDescription(),
+                request.getImageUrl()
+        );
+
+        return new ProductDto.DetailResponse(product);
+    }
+
+    // 상품 삭제
+    @Transactional
+    public void deleteProduct(Long id){
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+        product.discontinue();
     }
 
     // sku 형태: PRD2026000123
