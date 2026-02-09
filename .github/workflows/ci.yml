@@ -53,12 +53,12 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare Docker image tag
         id: prep
-        run: echo "image_tag=ghcr.io/${GITHUB_REPOSITORY,,}:dev" >> "$GITHUB_OUTPUT"
+        run: echo "image_tag=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):dev" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6

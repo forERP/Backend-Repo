@@ -6,17 +6,6 @@ spring:
 
 server:
   port: 8081
-
-app:
-  bootstrap:
-    admin:
-      enabled: ${BOOTSTRAP_ADMIN_ENABLED}
-      login-id: ${BOOTSTRAP_ADMIN_LOGIN_ID}
-      employee-code: ${BOOTSTRAP_ADMIN_EMPLOYEE_CODE}
-      password: ${BOOTSTRAP_ADMIN_PASSWORD}
-      name: ${BOOTSTRAP_ADMIN_NAME}
-      role: ${BOOTSTRAP_ADMIN_ROLE}
-      store-code: ${BOOTSTRAP_ADMIN_STORE_CODE}
 ---
 spring:
   config:
@@ -33,6 +22,17 @@ spring:
     hibernate:
       ddl-auto: create
     show-sql: true
+
+app:
+  bootstrap:
+    admin:
+      enabled: ${BOOTSTRAP_ADMIN_ENABLED}
+      login-id: ${BOOTSTRAP_ADMIN_LOGIN_ID}
+      employee-code: ${BOOTSTRAP_ADMIN_EMPLOYEE_CODE}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD}
+      name: ${BOOTSTRAP_ADMIN_NAME}
+      role: ${BOOTSTRAP_ADMIN_ROLE}
+      store-code: ${BOOTSTRAP_ADMIN_STORE_CODE}
 
 jwt:
   secret:
@@ -61,4 +61,4 @@ app:
 
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}
+    key: test-only-secret
