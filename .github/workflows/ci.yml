@@ -32,9 +32,8 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Run tests
-        run: ./mvnw test
+        run: ./mvnw -Dspring.profiles.active=test test
         env:
-          SPRING_PROFILES_ACTIVE: test
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
 
   docker-image:
