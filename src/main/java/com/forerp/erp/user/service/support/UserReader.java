@@ -25,7 +25,7 @@ public class UserReader {
                 .orElseThrow(() -> new IllegalArgumentException("아이디가 일치하지 않습니다."));
     }
     public User getUserForPos(String storeCode, String employeeCode){
-        return userRepository.findByStore_StoreAndEmployeeCode(storeCode, employeeCode)
+        return userRepository.findByStore_StoreCodeAndEmployeeCode(storeCode, employeeCode)
                 .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
     }
     public Store getStore(Long storeId){
