@@ -50,9 +50,10 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
 
-    // 상품 삭제
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id){
-        productService.deleteProduct(id);
+    // 상품 단종 처리
+    @PatchMapping("/{id}/discontinue")
+    public ResponseEntity<Void> discontinueProduct(@PathVariable Long id){
+        productService.discontinueProduct(id);
         return ResponseEntity.noContent().build();
     }
 }

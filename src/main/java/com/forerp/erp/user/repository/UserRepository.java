@@ -11,6 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByStore_IdAndEmployeeCode(Long storeId, String employeeCode);
 
+    Optional<User> findByStore_StoreCodeAndEmployeeCode(String storeCode, String employeeCode);
+
     long countByStore(Store store);
 
     boolean existsByLoginId(String loginId);

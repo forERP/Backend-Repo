@@ -60,6 +60,7 @@ public class ProductService {
     }
 
     // 단건 조회
+    @Transactional(readOnly = true)
     public ProductDto.DetailResponse getProduct(Long id){
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
@@ -67,6 +68,7 @@ public class ProductService {
     }
 
     // 상품 수정
+    @Transactional
     public ProductDto.DetailResponse updateProduct(Long id, ProductDto.UpdateRequest request){
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
@@ -89,9 +91,9 @@ public class ProductService {
         return new ProductDto.DetailResponse(product);
     }
 
-    // 상품 삭제
+    // 상품 단종 처리
     @Transactional
-    public void deleteProduct(Long id){
+    public void discontinueProduct(Long id){
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
         product.discontinue();

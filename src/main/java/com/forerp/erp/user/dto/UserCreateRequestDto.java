@@ -15,9 +15,9 @@ public class UserCreateRequestDto {
     @Size(max = 50)
     private String loginId;
 
-    @NotBlank
-    @Size(max = 50)
-    private String employeeCode;
+//    @NotBlank
+//    @Size(max = 50)
+//    private String employeeCode;
 
     @NotBlank
     @Size(min = 8, max = 100)
