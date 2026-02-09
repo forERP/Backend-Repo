@@ -45,10 +45,10 @@ public class UserController {
     // POS 로그인
     @PostMapping("/login/pos")
     public ResponseEntity<LoginResponseDto> loginPos(@RequestBody Map<String, String> request){
-        Long storeId = Long.parseLong(request.get("storeId"));
+        String storeCode = request.get("storeCode");
         String employeeCode = request.get("employeeCode");
 
-        return ResponseEntity.ok(userService.loginPos(storeId, employeeCode));
+        return ResponseEntity.ok(userService.loginPos(storeCode, employeeCode));
     }
 
     // 회원 정보 조회

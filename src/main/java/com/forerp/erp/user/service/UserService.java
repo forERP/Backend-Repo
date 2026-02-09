@@ -95,8 +95,8 @@ public class UserService {
     }
 
     // POS 로그인
-    public LoginResponseDto loginPos(Long storeId, String employeeCode){
-        User user = userReader.getUserForPos(storeId, employeeCode);
+    public LoginResponseDto loginPos(String storeCode, String employeeCode){
+        User user = userReader.getUserForPos(storeCode, employeeCode);
         validateActiveUser(user);
 
         return generateTokenResponse(user);
