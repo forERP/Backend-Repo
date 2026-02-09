@@ -10,13 +10,13 @@ server:
 app:
   bootstrap:
     admin:
-      enabled: true
-      login-id: admin
-      employee-code: 0000
-      password: admin
-      name: System Admin
-      role: HQ_ADMIN
-      store-code: 000
+      enabled: ${BOOTSTRAP_ADMIN_ENABLED}
+      login-id: ${BOOTSTRAP_ADMIN_LOGIN_ID}
+      employee-code: ${BOOTSTRAP_ADMIN_EMPLOYEE_CODE}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD}
+      name: ${BOOTSTRAP_ADMIN_NAME}
+      role: ${BOOTSTRAP_ADMIN_ROLE}
+      store-code: ${BOOTSTRAP_ADMIN_STORE_CODE}
 ---
 spring:
   config:
@@ -24,10 +24,10 @@ spring:
       on-profile: local
 
   datasource:
-    url: jdbc:mysql://localhost:3306/forerp
+    url: ${SPRING_DATASOURCE_URL}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: mysql
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     hibernate:
@@ -36,7 +36,7 @@ spring:
 
 jwt:
   secret:
-    key: My-Franchise-ERP-Project-Secret-Key-Is-Very-Strong-And-Long-12345
+    key: ${JWT_SECRET_KEY}
 ---
 spring:
   config:

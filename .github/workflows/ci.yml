@@ -35,4 +35,33 @@ jobs:
         run: ./mvnw test
         env:
           SPRING_PROFILES_ACTIVE: test
-          JWT_SECRET_KEY: ${{secrets.JWT_SECRET_KEY}}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+
+  docker-image:
+    # develop 브랜치에 push 될 때만 이미지 빌드/푸시
+    if: github.ref == 'refs/heads/develop'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/forERP/Backend-Repo:dev
