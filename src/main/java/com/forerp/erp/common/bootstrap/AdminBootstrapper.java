@@ -14,7 +14,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-@ConditionalOnProperty(prefix="app.bootstrap.admin", name="enabled", havingValue="true")
+@ConditionalOnProperty(
+        prefix = "app.bootstrap.admin",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 @Component
 @RequiredArgsConstructor
 @Transactional

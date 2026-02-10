@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+app:
+  bootstrap:
+    admin:
+      enabled: ${BOOTSTRAP_ADMIN_ENABLED:true}
+      login-id: ${BOOTSTRAP_ADMIN_LOGIN_ID:admin}
+      employee-code: ${BOOTSTRAP_ADMIN_EMPLOYEE_CODE:0000}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:admin}
+      name: ${BOOTSTRAP_ADMIN_NAME:System Admin}
+      role: ${BOOTSTRAP_ADMIN_ROLE:HQ_ADMIN}
+      store-code: ${BOOTSTRAP_ADMIN_STORE_CODE:000}
+
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
