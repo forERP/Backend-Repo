@@ -26,13 +26,13 @@ spring:
 app:
   bootstrap:
     admin:
-      enabled: ${BOOTSTRAP_ADMIN_ENABLED}
-      login-id: ${BOOTSTRAP_ADMIN_LOGIN_ID}
-      employee-code: ${BOOTSTRAP_ADMIN_EMPLOYEE_CODE}
-      password: ${BOOTSTRAP_ADMIN_PASSWORD}
-      name: ${BOOTSTRAP_ADMIN_NAME}
-      role: ${BOOTSTRAP_ADMIN_ROLE}
-      store-code: ${BOOTSTRAP_ADMIN_STORE_CODE}
+      enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}
+      login-id: ${BOOTSTRAP_ADMIN_LOGIN_ID:admin}
+      employee-code: ${BOOTSTRAP_ADMIN_EMPLOYEE_CODE:0000}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:admin}
+      name: ${BOOTSTRAP_ADMIN_NAME:System Admin}
+      role: ${BOOTSTRAP_ADMIN_ROLE:HQ_ADMIN}
+      store-code: ${BOOTSTRAP_ADMIN_STORE_CODE:000}
 
 jwt:
   secret:
