@@ -63,3 +63,11 @@ jobs:
           tags: ${{ steps.prep.outputs.image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Show surefire reports on failure
+        if: failure()
+        run: |
+          echo "=== surefire-reports ==="
+          ls -R target/surefire-reports || true
+          echo "=== *.txt ==="
+          for f in target/surefire-reports/*.txt; do echo "--- $f ---"; cat "$f"; done || true
