@@ -1,14 +1,17 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
+    url: jdbc:mysql://localhost:3307/forerp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    username: root
+    password: mysql
 
   jpa:
     hibernate:
       ddl-auto: create
     show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
 
 app:
   bootstrap:
@@ -23,4 +26,4 @@ app:
 
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}
+    key: ${JWT_SECRET_KEY:dev-super-secret-change-me-please}
