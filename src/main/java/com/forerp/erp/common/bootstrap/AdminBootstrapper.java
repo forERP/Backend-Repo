@@ -17,8 +17,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(
         prefix = "app.bootstrap.admin",
         name = "enabled",
-        havingValue = "true",
-        matchIfMissing = false
+        havingValue = "true"
 )
 @Component
 @RequiredArgsConstructor
