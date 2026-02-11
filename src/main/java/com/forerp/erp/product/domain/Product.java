@@ -80,4 +80,8 @@ public class Product {
     public void discontinue(){
         this.status = ProductStatus.DISCONTINUED;
     }
+
+    public void reactivate(){
+        this.status = ProductStatus.ACTIVE;
+    }
 }

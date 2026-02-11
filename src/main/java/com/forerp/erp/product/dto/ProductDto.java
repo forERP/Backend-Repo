@@ -26,7 +26,7 @@ public class ProductDto {
         private final Long id;
         private final String sku;
         private final String name;
-        private final String categoryName;
+        private final CategoryInfo category;
         private final BigDecimal msrpPrice;
         private final String description;
         private final String imageUrl;
@@ -38,7 +38,7 @@ public class ProductDto {
             this.id = product.getId();
             this.sku = product.getSku();
             this.name = product.getName();
-            this.categoryName = product.getCategory().getName();
+            this.category = new CategoryInfo(product.getCategory().getId(), product.getCategory().getName());
             this.msrpPrice = product.getMsrpPrice();
             this.description = product.getDescription();
             this.imageUrl = product.getImageUrl();
@@ -47,5 +47,16 @@ public class ProductDto {
             this.updateAt = product.getUpdatedAt();
         }
 
+    }
+
+    @Getter
+    public static class CategoryInfo {
+        private final Long id;
+        private final String name;
+
+        public CategoryInfo(Long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
     }
 }

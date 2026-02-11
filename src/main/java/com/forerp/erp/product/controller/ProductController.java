@@ -56,4 +56,11 @@ public class ProductController {
         productService.discontinueProduct(id);
         return ResponseEntity.noContent().build();
     }
+
+    // 상품 재등록 (단종 취소)
+    @PatchMapping("/{id}/reactivate")
+    public ResponseEntity<Void> reactivateProduct(@PathVariable Long id){
+        productService.reactivateProduct(id);
+        return ResponseEntity.noContent().build();
+    }
 }
