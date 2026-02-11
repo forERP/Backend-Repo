@@ -37,7 +37,9 @@ public class SecurityConfig {
                 "http://localhost:3100",     // backoffice-web (개발)
                 "http://localhost:3200",     // store-web (개발)
                 "http://backoffice-web",     // NginX 컨테이너명
-                "http://store-web"           // NginX 컨테이너명
+                "http://store-web",           // NginX 컨테이너명
+                "http://localhost:5173",
+                "http://localhost:5174"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -60,7 +62,7 @@ public class SecurityConfig {
         // API 경로별 접근 권한 설정
         http.authorizeHttpRequests(auth -> auth
                 // 로그인 API와 초기 사용자 설정 API는 토큰 없이도 접근 허용
-                .requestMatchers("/api/users/login", "/api/users/setup/**", "/api/attendance/**").permitAll()
+                .requestMatchers("/api/users/login", "/api/users/setup/**", "/api/users/login/pos", "/api/attendance/**").permitAll()
                 .anyRequest().authenticated()
         );
 

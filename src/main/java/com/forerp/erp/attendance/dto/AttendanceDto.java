@@ -13,8 +13,15 @@ public class AttendanceDto {
     @Getter
     @NoArgsConstructor
     public static class ClockInRequest {
-        private Long storeId;
+        private String storeCode;
         private String employeeCode;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class StatusResponse{
+            private String userName;
+            private String status;
     }
 
     @Getter

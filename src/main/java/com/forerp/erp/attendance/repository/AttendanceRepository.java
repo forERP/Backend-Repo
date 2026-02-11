@@ -27,4 +27,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
             LocalDate startDate,
             LocalDate endDate
     );
+
+    // 당일 출퇴근 상태 조회(POS)
+    Optional<Attendance>findByUser_IdAndWorkDate(Long userId, LocalDate workDate);
 }
