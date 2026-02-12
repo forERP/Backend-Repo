@@ -4,6 +4,7 @@ import com.forerp.erp.warehouse.domain.Warehouse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
@@ -16,6 +17,7 @@ public class WarehouseResponseDto {
     private Long storeId;
     private String storeName;
     private boolean active;
+    private LocalDateTime createdAt;
 
     public static WarehouseResponseDto from(Warehouse warehouse) {
         return new WarehouseResponseDto(
@@ -25,6 +27,7 @@ public class WarehouseResponseDto {
                 warehouse.getStore().getId(),
                 warehouse.getStore().getName(),
                 warehouse.isActive()
+                , warehouse.getCreatedAt()
         );
     }
 }

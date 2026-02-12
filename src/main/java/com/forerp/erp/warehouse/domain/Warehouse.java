@@ -77,4 +77,16 @@ public class Warehouse {
     public void activate() {
         this.active = true;
     }
+
+    public void updateInfo(String code, String name, Boolean active) {
+        if (code != null && !code.isBlank()) {
+            this.code = code.trim().toUpperCase();
+        }
+        if (name != null && !name.isBlank()) {
+            this.name = name.trim();
+        }
+        if (active != null) {
+            this.active = active;
+        }
+    }
 }

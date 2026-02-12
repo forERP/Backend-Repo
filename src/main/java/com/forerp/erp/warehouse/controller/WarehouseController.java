@@ -2,12 +2,16 @@ package com.forerp.erp.warehouse.controller;
 
 import com.forerp.erp.warehouse.domain.Warehouse;
 import com.forerp.erp.warehouse.dto.WarehouseResponseDto;
+import com.forerp.erp.warehouse.dto.WarehouseRequestDto;
+import com.forerp.erp.warehouse.dto.WarehouseUpdateRequestDto;
 import com.forerp.erp.warehouse.repository.WarehouseRepository;
+import com.forerp.erp.store.repository.StoreRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +25,7 @@ import java.util.List;
 public class WarehouseController {
 
     private final WarehouseRepository warehouseRepository;
+        private final StoreRepository storeRepository;
 
     @Operation(summary = "창고 단건 조회")
     @ApiResponse(responseCode = "200", description = "OK",
@@ -51,4 +56,27 @@ public class WarehouseController {
         }
         return ResponseEntity.ok(warehouses);
     }
+
+        @Operation(summary = "창고 생성")
+        @PostMapping
+        public ResponseEntity<WarehouseResponseDto> createWarehouse(@RequestBody @Valid WarehouseRequestDto request) {
+                var store = storeRepository.findById(request.getStoreId())
+                                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다: " + request.getStoreId()));
+
+                Warehouse warehouse = Warehouse.create(store, request.getCode(), request.getName());
+                Warehouse saved = warehouseRepository.save(warehouse);
+                return ResponseEntity.ok(WarehouseResponseDto.from(saved));
+        }
+
+        @Operation(summary = "창고 수정 (이름/코드/활성화)")
+        @PutMapping("/{warehouseId}")
+        public ResponseEntity<WarehouseResponseDto> updateWarehouse(@PathVariable Long warehouseId,
+                                                                                                                                 @RequestBody WarehouseUpdateRequestDto request) {
+                Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                                .orElseThrow(() -> new IllegalArgumentException("창고를 찾을 수 없습니다: " + warehouseId));
+
+                warehouse.updateInfo(request.getCode(), request.getName(), request.getActive());
+                Warehouse saved = warehouseRepository.save(warehouse);
+                return ResponseEntity.ok(WarehouseResponseDto.from(saved));
+        }
 }
