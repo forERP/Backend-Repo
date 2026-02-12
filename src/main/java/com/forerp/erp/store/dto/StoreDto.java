@@ -16,6 +16,17 @@ public class StoreDto {
     public static class CreateRequest{
         @NotBlank
         private String name;
+        private String phone;
+        private String address;
+        private StoreType type;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    public static class UpdateRequest{
+        private String name;
+        private String phone;
+        private String address;
     }
 
     @Getter
@@ -30,6 +41,8 @@ public class StoreDto {
         private Long id;
         private String code;
         private String name;
+        private String phone;
+        private String address;
         private StoreType type;
         private StoreStatus status;
         private LocalDateTime createdAt;

@@ -12,6 +12,8 @@ public class StoreResponseMapper {
                 store.getId(),
                 store.getStoreCode(),
                 store.getName(),
+                store.getPhone(),
+                store.getAddress(),
                 store.getStoreType(),
                 store.getStatus(),
                 store.getCreatedAt()

@@ -33,6 +33,12 @@ public class Store {
     @Column(nullable = false, length = 10)
     private StoreStatus status = StoreStatus.OPEN;
 
+    @Column(name = "phone", length = 20)
+    private String phone;
+
+    @Column(name = "address", length = 255)
+    private String address;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -42,11 +48,13 @@ public class Store {
     }
 
     @Builder
-    private Store(String name, StoreType storeType, StoreStatus status, String storeCode) {
+    private Store(String name, StoreType storeType, StoreStatus status, String storeCode, String phone, String address) {
         this.name = name;
         this.storeCode = storeCode;
         this.storeType = (storeType == null) ? StoreType.STORE : storeType;
         this.status = (status == null) ? StoreStatus.OPEN : status;
+        this.phone = phone;
+        this.address = address;
     }
 
     public boolean isHQ() {
@@ -65,4 +73,9 @@ public class Store {
         this.status = StoreStatus.INACTIVE;
     }
 
+    public void updateInfo(String name, String phone, String address) {
+        if (name != null) this.name = name;
+        if (phone != null) this.phone = phone;
+        if (address != null) this.address = address;
+    }
 }

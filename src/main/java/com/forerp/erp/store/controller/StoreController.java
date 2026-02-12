@@ -18,19 +18,19 @@ public class StoreController {
 
     // 매장 생성
     @PostMapping
-    public ResponseEntity<StoreDto.Response> createStore(@RequestBody @Valid StoreDto.CreateRequest request){
+    public ResponseEntity<StoreDto.Response> createStore(@RequestBody @Valid StoreDto.CreateRequest request) {
         return ResponseEntity.ok(storeService.createStore(request));
     }
 
     // 전체 매장 조회
     @GetMapping
-    public ResponseEntity<List<StoreDto.Response>> getAllStores(){
+    public ResponseEntity<List<StoreDto.Response>> getAllStores() {
         return ResponseEntity.ok(storeService.getAllStores());
     }
 
     // 단건 조회
     @GetMapping("/{id}")
-    public ResponseEntity<StoreDto.Response> getStore(@PathVariable Long id){
+    public ResponseEntity<StoreDto.Response> getStore(@PathVariable Long id) {
         return ResponseEntity.ok(storeService.getStore(id));
     }
 
@@ -38,7 +38,15 @@ public class StoreController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<StoreDto.Response> updateStatus(
             @PathVariable Long id,
-            @RequestBody StoreDto.UpdateStatusRequest request){
+            @RequestBody StoreDto.UpdateStatusRequest request) {
         return ResponseEntity.ok(storeService.updateStoreStatus(id, request));
+    }
+
+    // 매장 정보 수정
+    @PutMapping("/{id}")
+    public ResponseEntity<StoreDto.Response> updateStore(
+            @PathVariable Long id,
+            @RequestBody @Valid StoreDto.UpdateRequest request) {
+        return ResponseEntity.ok(storeService.updateStore(id, request));
     }
 }

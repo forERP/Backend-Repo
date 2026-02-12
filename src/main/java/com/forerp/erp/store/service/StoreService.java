@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,15 +34,30 @@ public class StoreService {
     @Transactional
     public StoreDto.Response createStore(StoreDto.CreateRequest request){
 
-        long count = storeReader.countAll();
-        String generatedCode = String.format("%03d", count + 1);
+        String generatedCode;
+        Optional<Store> last = storeRepository.findTopByStoreCodeNotOrderByStoreCodeDesc("000");
+        if (last.isPresent()) {
+            try {
+                int lastNum = Integer.parseInt(last.get().getStoreCode());
+                generatedCode = String.format("%03d", lastNum + 1);
+            } catch (NumberFormatException e) {
+                generatedCode = String.format("%03d", storeReader.countAll() + 1);
+            }
+        } else {
+            // No non-HQ stores yet => first store after HQ should be 001
+            generatedCode = "001";
+        }
+
+        StoreType type = (request.getType() == null) ? StoreType.STORE : request.getType();
 
         Store store = Store.builder()
-                .name(request.getName())
-                .storeCode(generatedCode)
-                .storeType(StoreType.STORE)
-                .status(StoreStatus.OPEN)
-                .build();
+            .name(request.getName())
+            .storeCode(generatedCode)
+            .storeType(type)
+            .status(StoreStatus.OPEN)
+            .phone(request.getPhone())
+            .address(request.getAddress())
+            .build();
 
         Store saved = storeRepository.save(store);
         logAction("CREATE_STORE", saved.getId());
@@ -50,6 +66,7 @@ public class StoreService {
     }
 
     // 매장 상태 변경
+    @Transactional
     public StoreDto.Response updateStoreStatus(Long id, StoreDto.UpdateStatusRequest request){
         Store store = storeReader.getStore(id);
 
@@ -62,6 +79,16 @@ public class StoreService {
         }
 
         logAction("UPDATE_STORE_STATUS", store.getId());
+        return storeResponseMapper.toDto(store);
+    }
+
+    // 매장 정보 수정
+    @Transactional
+    public StoreDto.Response updateStore(Long id, StoreDto.UpdateRequest request){
+        Store store = storeReader.getStore(id);
+        store.updateInfo(request.getName(), request.getPhone(), request.getAddress());
+        
+        logAction("UPDATE_STORE_INFO", store.getId());
         return storeResponseMapper.toDto(store);
     }
 
@@ -85,5 +112,4 @@ public class StoreService {
 
         }
     }
-
 }
