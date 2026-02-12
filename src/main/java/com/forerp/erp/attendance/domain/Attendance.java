@@ -3,13 +3,14 @@ package com.forerp.erp.attendance.domain;
 import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
 @Table(name = "attendances")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Attendance{
@@ -57,7 +58,11 @@ public class Attendance{
 
     // 퇴근 시간 기록
     public void recordClockOut(){
+        if(this.status != AttendanceStatus.WORK){
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"근무 중인 상태에서만 퇴근할 수 있습니다.");
+        }
         this.clockOut = LocalDateTime.now();
+        this.status = AttendanceStatus.OUT;
     }
 
 

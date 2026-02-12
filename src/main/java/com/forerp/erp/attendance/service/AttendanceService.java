@@ -8,8 +8,10 @@ import com.forerp.erp.attendance.service.support.AttendanceReader;
 import com.forerp.erp.attendance.service.support.AttendanceResponseMapper;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -47,7 +49,7 @@ public class AttendanceService {
         User user = attendanceReader.getUserForPos(request.getStoreCode(),
                 request.getEmployeeCode());
 
-        Attendance attendance = attendanceRepository.findByUser_IdAndWorkDate(user.getId(), LocalDate.now()).orElseThrow(() -> new IllegalArgumentException("퇴근 처리할 출근 기록이 없습니다."));
+        Attendance attendance = attendanceReader.getWorkingAttendance(user.getId());
 
         attendance.recordClockOut();
 
