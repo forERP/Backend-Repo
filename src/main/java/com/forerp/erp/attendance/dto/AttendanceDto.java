@@ -21,7 +21,7 @@ public class AttendanceDto {
     @AllArgsConstructor
     public static class StatusResponse{
             private String userName;
-            private String status;
+            private AttendanceStatus status;
     }
 
     @Getter

@@ -1,6 +1,7 @@
 package com.forerp.erp.attendance.service;
 
 import com.forerp.erp.attendance.domain.Attendance;
+import com.forerp.erp.attendance.domain.AttendanceStatus;
 import com.forerp.erp.attendance.dto.AttendanceDto;
 import com.forerp.erp.attendance.repository.AttendanceRepository;
 import com.forerp.erp.attendance.service.support.AttendanceReader;
@@ -46,12 +47,13 @@ public class AttendanceService {
         User user = attendanceReader.getUserForPos(request.getStoreCode(),
                 request.getEmployeeCode());
 
-        Attendance attendance = attendanceReader.getWorkingAttendance(user.getId());
+        Attendance attendance = attendanceRepository.findByUser_IdAndWorkDate(user.getId(), LocalDate.now()).orElseThrow(() -> new IllegalArgumentException("퇴근 처리할 출근 기록이 없습니다."));
 
         attendance.recordClockOut();
 
         return mapper.toResponse(attendance);
     }
+
 
     // 휴가 등록
     public void registerLeave(AttendanceDto.LeaveRequest request) {
@@ -82,16 +84,10 @@ public class AttendanceService {
 
         Optional<Attendance> today = attendanceRepository.findByUser_IdAndWorkDate(user.getId(), LocalDate.now());
 
-        String status;
         if (today.isEmpty()) {
-            status = "NOT_STARTED";
-        } else if (today.get().getClockOut() == null) {
-            status = "WORKING";
-        } else {
-            status = "FINISHED";
+            return new AttendanceDto.StatusResponse(user.getName(), null);
         }
-
-        return new AttendanceDto.StatusResponse(user.getName(), status);
+        return new AttendanceDto.StatusResponse(user.getName(), today.get().getStatus());
     }
 }
 

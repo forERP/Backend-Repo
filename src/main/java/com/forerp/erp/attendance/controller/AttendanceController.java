@@ -32,9 +32,9 @@ public class AttendanceController {
     // 관리자용 근태 기록 조회
     @GetMapping("/history")
     public ResponseEntity<List<AttendanceDto.HistoryResponse>> getAttendanceHistory(
-            Long storeId,
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate startDate,
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate endDate){
+            @RequestParam Long storeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate endDate){
 
         return ResponseEntity.ok(attendanceService.getStoreAttendanceHistory(storeId, startDate, endDate));
     }
