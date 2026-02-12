@@ -74,8 +74,8 @@ public class StoreService {
             store.close();
         }else if(request.getStatus() == StoreStatus.INACTIVE){
             store.deactivate();
-        }else{
-            // store.open(); // 다시 오픈하는 경우
+        }else if(request.getStatus() == StoreStatus.OPEN){
+            store.open();
         }
 
         logAction("UPDATE_STORE_STATUS", store.getId());

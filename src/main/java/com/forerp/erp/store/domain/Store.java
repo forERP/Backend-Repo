@@ -73,6 +73,10 @@ public class Store {
         this.status = StoreStatus.INACTIVE;
     }
 
+    public void open() {
+        this.status = StoreStatus.OPEN;
+    }
+
     public void updateInfo(String name, String phone, String address) {
         if (name != null) this.name = name;
         if (phone != null) this.phone = phone;
