@@ -22,8 +22,8 @@ public class AttendanceReader {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
 
-    public User getUserForPos(Long storeId, String employeeCode){
-        return userRepository.findByStore_IdAndEmployeeCode(storeId, employeeCode)
+    public User getUserForPos(String storeCode, String employeeCode){
+        return userRepository.findByStore_StoreCodeAndEmployeeCode(storeCode, employeeCode)
                 .orElseThrow(() -> new IllegalArgumentException("해당 매장의 직원을 찾을 수 없습니다."));
     }
 

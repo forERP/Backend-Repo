@@ -2,16 +2,14 @@ package com.forerp.erp.attendance.domain;
 
 import com.forerp.erp.user.domain.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter
 @Table(name = "attendances")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Attendance{
@@ -61,6 +59,9 @@ public class Attendance{
     public void recordClockOut(){
         this.clockOut = LocalDateTime.now();
     }
+
+
+
 
 
 }
