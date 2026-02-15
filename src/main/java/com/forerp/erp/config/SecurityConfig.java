@@ -4,6 +4,7 @@ import com.forerp.erp.common.jwt.JwtSecurityFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -54,6 +55,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(0)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource())); // CORS 활성화
         http.csrf(AbstractHttpConfigurer::disable); // csrf 보호 비활성화(토큰 방식을 사용하므로)
@@ -65,7 +67,12 @@ public class SecurityConfig {
                 // OPTIONS 요청은 CORS preflight용으로 항상 허용
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // 로그인 API와 초기 사용자 설정 API는 토큰 없이도 접근 허용
-                .requestMatchers("/api/users/login", "/api/users/setup/**", "/api/attendance/**").permitAll()
+                .requestMatchers("/api/users/login/**",
+                        "/api/users/setup/**",
+                        "/api/attendance/status",
+                        "/api/attendance/clock-in",
+                        "/api/attendance/clock-out"
+                ).permitAll()
                 .anyRequest().authenticated()
         );
 

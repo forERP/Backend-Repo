@@ -5,7 +5,9 @@ import com.forerp.erp.attendance.repository.AttendanceRepository;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,8 +31,9 @@ public class AttendanceReader {
 
     public Attendance getWorkingAttendance(Long userId){
         return attendanceRepository.findTopByUser_IdAndClockOutIsNullOrderByClockInDesc(userId)
-                .orElseThrow(() -> new IllegalArgumentException("현재 근무 중인 상태가 아닙니다."));
+                .orElseThrow(() -> new IllegalArgumentException("현재 근무 중인 기록이 없습니다."));
     }
+
 
     // 기간별 조회
     public List<Attendance> getHistory(Long storeId, LocalDate start, LocalDate end){
