@@ -20,7 +20,7 @@ app:
       login-id: ${BOOTSTRAP_ADMIN_LOGIN_ID:admin}
       employee-code: ${BOOTSTRAP_ADMIN_EMPLOYEE_CODE:0000}
       password: ${BOOTSTRAP_ADMIN_PASSWORD:admin}
-      name: ${BOOTSTRAP_ADMIN_NAME:System Admin}
+      name: ${BOOTSTRAP_ADMIN_NAME:HQ Admin}
       role: ${BOOTSTRAP_ADMIN_ROLE:HQ_ADMIN}
       store-code: ${BOOTSTRAP_ADMIN_STORE_CODE:000}
 

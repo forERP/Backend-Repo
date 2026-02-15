@@ -47,12 +47,49 @@ public class Supplier {
             String contactEmail,
             String address
     ) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("거래처명은 필수입니다.");
+        }
+
         Supplier supplier = new Supplier();
-        supplier.name = name;
-        supplier.contactName = contactName;
-        supplier.contactPhone = contactPhone;
-        supplier.contactEmail = contactEmail;
-        supplier.address = address;
+        supplier.name = name.trim();
+        supplier.contactName = normalize(contactName);
+        supplier.contactPhone = normalize(contactPhone);
+        supplier.contactEmail = normalize(contactEmail);
+        supplier.address = normalize(address);
         return supplier;
+    }
+
+    public void update(
+            String name,
+            String contactName,
+            String contactPhone,
+            String contactEmail,
+            String address,
+            Boolean active
+    ) {
+        if (name != null) {
+            if (name.isBlank()) {
+                throw new IllegalArgumentException("거래처명은 비워둘 수 없습니다.");
+            }
+            this.name = name.trim();
+        }
+
+        this.contactName = normalize(contactName);
+        this.contactPhone = normalize(contactPhone);
+        this.contactEmail = normalize(contactEmail);
+        this.address = normalize(address);
+
+        if (active != null) {
+            this.active = active;
+        }
+    }
+
+    private static String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

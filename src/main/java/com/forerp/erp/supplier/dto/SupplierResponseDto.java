@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,6 +19,7 @@ public class SupplierResponseDto {
     private String contactEmail;
     private String address;
     private boolean active;
+    private LocalDateTime createdAt;
 
     public static SupplierResponseDto from(Supplier supplier) {
         return new SupplierResponseDto(
@@ -26,7 +29,8 @@ public class SupplierResponseDto {
                 supplier.getContactPhone(),
                 supplier.getContactEmail(),
                 supplier.getAddress(),
-                supplier.isActive()
+                supplier.isActive(),
+                supplier.getCreatedAt()
         );
     }
 }
