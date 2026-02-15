@@ -73,10 +73,11 @@ public class User {
     }
 
     // 회원 정보 수정
-    public void updateInfo(String name, String passwordHash, Store store, UserRole role){
+    public void updateInfo(String name, String passwordHash, Store store, UserRole role, UserStatus status){
         if (name != null) this.name = name;
         if (passwordHash != null) this.passwordHash = passwordHash;
         if (store != null) this.store = store;
         if (role != null) this.role = role;
+        if (status != null) this.status = status;
     }
 }
