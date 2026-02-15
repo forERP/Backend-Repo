@@ -2,6 +2,7 @@ package com.forerp.erp.outbound.repository;
 
 import com.forerp.erp.outbound.domain.Outbound;
 import com.forerp.erp.outbound.domain.OutboundStatus;
+import com.forerp.erp.shipment.domain.ShipmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -20,7 +21,10 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
         join o.items oi
         join oi.storeProduct sp
         where (:storeId is null or o.store.id = :storeId)
+          and (:storeName is null or lower(o.store.name) like lower(concat('%', :storeName, '%')))
+          and (:storeCode is null or lower(o.store.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:status is null or o.status = :status)
+          and (:shipmentStatus is null or o.shipment.status = :shipmentStatus)
           and (:warehouseId is null or sp.warehouse.id = :warehouseId)
           and (:fromDt is null or o.createdAt >= :fromDt)
           and (:toDt is null or o.createdAt < :toDt)
@@ -28,7 +32,10 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
     """)
     Page<Outbound> search(
             @Param("storeId") Long storeId,
+            @Param("storeName") String storeName,
+            @Param("storeCode") String storeCode,
             @Param("status") OutboundStatus status,
+            @Param("shipmentStatus") ShipmentStatus shipmentStatus,
             @Param("warehouseId") Long warehouseId,
             @Param("fromDt") LocalDateTime fromDt,
             @Param("toDt") LocalDateTime toDt,

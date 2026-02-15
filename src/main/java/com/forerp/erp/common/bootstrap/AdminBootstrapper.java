@@ -29,7 +29,7 @@ public class AdminBootstrapper implements ApplicationRunner {
     private final StoreRepository storeRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private static final String HQ_STORE_NAME = "HQ";
+    private static final String HQ_STORE_NAME = "본사";
 
     @Override
     public void run(ApplicationArguments args) {

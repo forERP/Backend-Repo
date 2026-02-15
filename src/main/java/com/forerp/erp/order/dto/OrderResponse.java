@@ -18,6 +18,8 @@ public class OrderResponse {
 
     private Long orderId;
     private Long storeId;
+    private String storeName;
+    private String storeCode;
     private String status;
     private BigDecimal totalAmount;
     private LocalDateTime orderedAt;
@@ -48,6 +50,8 @@ public class OrderResponse {
         return new OrderResponse(
                 o.getId(),
                 o.getStore().getId(),
+                o.getStore().getName(),
+                o.getStore().getStoreCode(),
                 o.getStatus().name(),
                 o.getTotalAmount(),
                 o.getOrderedAt(),

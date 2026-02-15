@@ -55,6 +55,8 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderListResponse list(
             Long storeId,
+            String storeName,
+            String storeCode,
             String status,
             String from,
             String to,
@@ -66,12 +68,22 @@ public class OrderService {
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
 
         PageRequest pageable = PageRequest.of(page, size);
-        Page<Order> result = orderRepository.search(storeId, st, fromDt, toDt, pageable);
+        Page<Order> result = orderRepository.search(
+                storeId,
+                normalize(storeName),
+                normalize(storeCode),
+                st,
+                fromDt,
+                toDt,
+                pageable
+        );
 
         List<OrderListResponse.OrderListItem> content = result.getContent().stream()
                 .map(o -> new OrderListResponse.OrderListItem(
                         o.getId(),
                         o.getStore().getId(),
+                        o.getStore().getName(),
+                        o.getStore().getStoreCode(),
                         o.getStatus().name(),
                         o.getTotalAmount(),
                         o.getOrderedAt()
@@ -85,5 +97,13 @@ public class OrderService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

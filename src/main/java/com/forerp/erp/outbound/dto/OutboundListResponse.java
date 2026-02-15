@@ -28,7 +28,11 @@ public class OutboundListResponse {
         private Long outboundId;
         private Long orderId;
         private Long storeId;
+        private String storeName;
+        private String storeCode;
         private Long warehouseId;
+        private String warehouseCode;
+        private String warehouseName;
         private String status;         // CREATED/CONFIRMED/CANCELED
         private LocalDateTime createdAt;
         private String shipmentStatus; // READY/SHIPPING/ARRIVED

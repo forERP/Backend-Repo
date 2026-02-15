@@ -18,12 +18,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("""
         select o from Order o
         where (:storeId is null or o.store.id = :storeId)
+          and (:storeName is null or lower(o.store.name) like lower(concat('%', :storeName, '%')))
+          and (:storeCode is null or lower(o.store.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:status is null or o.status = :status)
           and (:fromDt is null or o.orderedAt >= :fromDt)
           and (:toDt is null or o.orderedAt < :toDt)
         """)
     Page<Order> search(
             @Param("storeId") Long storeId,
+            @Param("storeName") String storeName,
+            @Param("storeCode") String storeCode,
             @Param("status") OrderStatus status,
             @Param("fromDt") LocalDateTime fromDt,
             @Param("toDt") LocalDateTime toDt,

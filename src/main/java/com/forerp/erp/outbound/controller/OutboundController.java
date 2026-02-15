@@ -19,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Outbound", description = "출고(지점 → 소비자) 처리 API (POS 포함)")
+@Tag(name = "Outbound", description = "Outbound API")
 @RestController
 @RequestMapping("/api/outbounds")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class OutboundController {
 
     private final OutboundService outboundService;
 
-    @Operation(summary = "출고 생성", description = "출고 문서 생성 + Shipment(READY) 자동 생성")
+    @Operation(summary = "Create outbound")
     @ApiResponse(responseCode = "201", description = "Created",
             content = @Content(schema = @Schema(implementation = OutboundResponse.class)))
     @PostMapping
@@ -36,10 +36,7 @@ public class OutboundController {
         return ResponseEntity.status(201).body(OutboundResponse.from(outbound));
     }
 
-    @Operation(
-            summary = "출고 확정(배송 출발 + 재고 차감)",
-            description = "Shipment.depart(READY→SHIPPING) 후 재고 차감 및 Outbound CONFIRMED"
-    )
+    @Operation(summary = "Confirm outbound")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = OutboundResponse.class)))
     @PostMapping("/{outboundId}/confirm")
@@ -57,10 +54,7 @@ public class OutboundController {
         return ResponseEntity.ok(OutboundResponse.from(outbound));
     }
 
-    @Operation(
-            summary = "배송 도착 처리(출고 완료)",
-            description = "Shipment.arrive(SHIPPING→ARRIVED) + Order( SHIPPED→ARRIVED ) + Outbound(CONFIRMED→ARRIVED)"
-    )
+    @Operation(summary = "Mark shipment arrived")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = OutboundResponse.class)))
     @PostMapping("/{outboundId}/shipment/arrive")
@@ -69,7 +63,7 @@ public class OutboundController {
         return ResponseEntity.ok(OutboundResponse.from(outbound));
     }
 
-    @Operation(summary = "출고 취소", description = "배송 출발 전(Shipment READY)까지만 취소 가능")
+    @Operation(summary = "Cancel outbound")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = OutboundResponse.class)))
     @PostMapping("/{outboundId}/cancel")
@@ -78,7 +72,7 @@ public class OutboundController {
         return ResponseEntity.ok(OutboundResponse.from(outbound));
     }
 
-    @Operation(summary = "출고 단건 조회")
+    @Operation(summary = "Get outbound")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = OutboundResponse.class)))
     @GetMapping("/{outboundId}")
@@ -87,37 +81,52 @@ public class OutboundController {
         return ResponseEntity.ok(OutboundResponse.from(outbound));
     }
 
-    @Operation(summary = "출고 목록 조회/검색",
-            description = """
-            - storeId/warehouseId/status/from/to는 선택
-            - from/to 형식: yyyy-MM-dd
-            - to는 '포함' 조건(내부적으로 to+1일 미만으로 조회)
-            """)
+    @Operation(summary = "List outbounds")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = OutboundListResponse.class)))
     @GetMapping
     public ResponseEntity<OutboundListResponse> listOutbounds(
-            @Parameter(description = "매장 ID(선택)", example = "1")
+            @Parameter(description = "Store ID", example = "1")
             @RequestParam(required = false) Long storeId,
 
-            @Parameter(description = "창고 ID(선택)", example = "2")
+            @Parameter(description = "Store name", example = "Gangnam")
+            @RequestParam(required = false) String storeName,
+
+            @Parameter(description = "Store code", example = "S0001")
+            @RequestParam(required = false) String storeCode,
+
+            @Parameter(description = "Warehouse ID", example = "2")
             @RequestParam(required = false) Long warehouseId,
 
-            @Parameter(description = "출고 상태(선택): CREATED/CONFIRMED/CANCELED", example = "CREATED")
+            @Parameter(description = "Outbound status: CREATED/CONFIRMED/ARRIVED/CANCELED", example = "CREATED")
             @RequestParam(required = false) String status,
 
-            @Parameter(description = "조회 시작일(선택), yyyy-MM-dd", example = "2026-02-01")
+            @Parameter(description = "Shipment status: READY/SHIPPING/ARRIVED", example = "SHIPPING")
+            @RequestParam(required = false) String shipmentStatus,
+
+            @Parameter(description = "Start date (yyyy-MM-dd)", example = "2026-02-01")
             @RequestParam(required = false) String from,
 
-            @Parameter(description = "조회 종료일(선택), yyyy-MM-dd", example = "2026-02-28")
+            @Parameter(description = "End date (yyyy-MM-dd)", example = "2026-02-28")
             @RequestParam(required = false) String to,
 
-            @Parameter(description = "페이지(0부터)", example = "0")
+            @Parameter(description = "Page (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
-            @Parameter(description = "페이지 크기", example = "20")
+            @Parameter(description = "Page size", example = "20")
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(outboundService.listOutbounds(storeId, warehouseId, status, from, to, page, size));
+        return ResponseEntity.ok(outboundService.listOutbounds(
+                storeId,
+                storeName,
+                storeCode,
+                warehouseId,
+                status,
+                shipmentStatus,
+                from,
+                to,
+                page,
+                size
+        ));
     }
 }

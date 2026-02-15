@@ -26,6 +26,8 @@ public class OrderListResponse {
     public static class OrderListItem {
         private Long orderId;
         private Long storeId;
+        private String storeName;
+        private String storeCode;
         private String status;
         private BigDecimal totalAmount;
         private LocalDateTime orderedAt;

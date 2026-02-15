@@ -14,6 +14,7 @@ import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.shipment.domain.ShipmentStatus;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.warehouse.domain.Warehouse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -100,26 +101,44 @@ public class OutboundService {
     @Transactional(readOnly = true)
     public OutboundListResponse listOutbounds(
             Long storeId,
+            String storeName,
+            String storeCode,
             Long warehouseId,
             String status,
+            String shipmentStatus,
             String from,
             String to,
             int page,
             int size
     ) {
         OutboundStatus st = QueryParamParser.parseEnumOrNull(status, OutboundStatus.class, "status");
+        ShipmentStatus shSt = QueryParamParser.parseEnumOrNull(shipmentStatus, ShipmentStatus.class, "shipmentStatus");
         LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
 
         PageRequest pageable = PageRequest.of(page, size);
-        Page<Outbound> result = outboundRepository.search(storeId, st, warehouseId, fromDt, toDt, pageable);
+        Page<Outbound> result = outboundRepository.search(
+                storeId,
+                normalize(storeName),
+                normalize(storeCode),
+                st,
+                shSt,
+                warehouseId,
+                fromDt,
+                toDt,
+                pageable
+        );
 
         List<OutboundListResponse.OutboundListItem> content = result.getContent().stream()
                 .map(o -> new OutboundListResponse.OutboundListItem(
                         o.getId(),
                         o.getOrder().getId(),
                         o.getStore().getId(),
+                        o.getStore().getName(),
+                        o.getStore().getStoreCode(),
                         extractWarehouseId(o),
+                        extractWarehouseCode(o),
+                        extractWarehouseName(o),
                         o.getStatus().name(),
                         o.getCreatedAt(),
                         o.getShipment() == null ? null : o.getShipment().getStatus().name()
@@ -135,10 +154,33 @@ public class OutboundService {
         );
     }
 
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private Long extractWarehouseId(Outbound o) {
+        Warehouse warehouse = extractWarehouse(o);
+        return warehouse == null ? null : warehouse.getId();
+    }
+
+    private String extractWarehouseCode(Outbound o) {
+        Warehouse warehouse = extractWarehouse(o);
+        return warehouse == null ? null : warehouse.getCode();
+    }
+
+    private String extractWarehouseName(Outbound o) {
+        Warehouse warehouse = extractWarehouse(o);
+        return warehouse == null ? null : warehouse.getName();
+    }
+
+    private Warehouse extractWarehouse(Outbound o) {
         if (o.getItems() == null || o.getItems().isEmpty()) return null;
         StoreProduct sp = o.getItems().get(0).getStoreProduct();
         if (sp == null || sp.getWarehouse() == null) return null;
-        return sp.getWarehouse().getId();
+        return sp.getWarehouse();
     }
 }
