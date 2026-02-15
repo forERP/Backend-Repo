@@ -4,6 +4,10 @@ import com.forerp.erp.store.dto.StoreDto;
 import com.forerp.erp.store.service.StoreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +30,16 @@ public class StoreController {
     @GetMapping
     public ResponseEntity<List<StoreDto.Response>> getAllStores() {
         return ResponseEntity.ok(storeService.getAllStores());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<StoreDto.Response>> searchStores(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String status,
+            @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(storeService.searchStores(name, code, status, pageable));
     }
 
     // 단건 조회

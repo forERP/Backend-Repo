@@ -55,6 +55,8 @@ public class PurchaseRequestService {
     @Transactional(readOnly = true)
     public PurchaseRequestListResponse list(
             Long storeId,
+            String storeName,
+            String storeCode,
             String status,
             String from,
             String to,
@@ -66,12 +68,23 @@ public class PurchaseRequestService {
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
 
         PageRequest pageable = PageRequest.of(page, size);
-        Page<PurchaseRequest> result = purchaseRequestRepository.search(storeId, st, fromDt, toDt, pageable);
+        Page<PurchaseRequest> result = purchaseRequestRepository.search(
+                storeId,
+                normalize(storeName),
+                normalize(storeCode),
+                st,
+                fromDt,
+                toDt,
+                pageable
+        );
 
         List<PurchaseRequestListResponse.Item> content = result.getContent().stream()
                 .map(pr -> new PurchaseRequestListResponse.Item(
                         pr.getId(),
                         pr.getStore().getId(),
+                        pr.getStore().getName(),
+                        pr.getStore().getStoreCode(),
+                        pr.getRequestedBy() == null ? null : pr.getRequestedBy().getId(),
                         pr.getStatus().name(),
                         pr.getCreatedAt()
                 ))
@@ -84,6 +97,14 @@ public class PurchaseRequestService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /* 발주요청 승인 = 발주 생성 */

@@ -13,6 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,6 +61,22 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouses);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<WarehouseResponseDto>> searchWarehouses(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String status,
+            @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<WarehouseResponseDto> page = warehouseRepository.search(
+                        normalize(name),
+                        normalize(code),
+                        parseActive(status),
+                        pageable)
+                .map(WarehouseResponseDto::from);
+        return ResponseEntity.ok(page);
+    }
+
         @Operation(summary = "창고 생성")
         @PostMapping
         public ResponseEntity<WarehouseResponseDto> createWarehouse(@RequestBody @Valid WarehouseRequestDto request) {
@@ -79,4 +99,24 @@ public class WarehouseController {
                 Warehouse saved = warehouseRepository.save(warehouse);
                 return ResponseEntity.ok(WarehouseResponseDto.from(saved));
         }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private Boolean parseActive(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        return switch (normalized) {
+            case "ACTIVE" -> true;
+            case "INACTIVE" -> false;
+            default -> throw new IllegalArgumentException("Invalid warehouse status: " + status);
+        };
+    }
 }

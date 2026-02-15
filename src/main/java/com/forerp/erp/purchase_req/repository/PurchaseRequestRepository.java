@@ -15,19 +15,21 @@ public interface PurchaseRequestRepository extends JpaRepository<PurchaseRequest
 
     @EntityGraph(attributePaths = {
             "store",
-            "requestedBy",
-            "items",
-            "items.product"
+            "requestedBy"
     })
     @Query("""
         select pr from PurchaseRequest pr
         where (:storeId is null or pr.store.id = :storeId)
+          and (:storeName is null or lower(pr.store.name) like lower(concat('%', :storeName, '%')))
+          and (:storeCode is null or lower(pr.store.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:status is null or pr.status = :status)
           and (:fromDt is null or pr.createdAt >= :fromDt)
           and (:toDt is null or pr.createdAt < :toDt)
         """)
     Page<PurchaseRequest> search(
             @Param("storeId") Long storeId,
+            @Param("storeName") String storeName,
+            @Param("storeCode") String storeCode,
             @Param("status") PurchaseRequestStatus status,
             @Param("fromDt") LocalDateTime fromDt,
             @Param("toDt") LocalDateTime toDt,

@@ -58,13 +58,15 @@ public class PurchaseRequestController {
     @GetMapping
     public ResponseEntity<PurchaseRequestListResponse> list(
             @RequestParam(required = false) Long storeId,
+            @RequestParam(required = false) String storeName,
+            @RequestParam(required = false) String storeCode,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
-        return ResponseEntity.ok(purchaseRequestService.list(storeId, status, from, to, page, size));
+        return ResponseEntity.ok(purchaseRequestService.list(storeId, storeName, storeCode, status, from, to, page, size));
     }
 
     @Operation(summary = "발주요청 승인(=발주 자동 생성)", description = "HQ_ADMIN이 요청을 승인하고 PurchaseOrder를 생성합니다.")

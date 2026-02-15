@@ -24,6 +24,9 @@ public class PurchaseRequestListResponse {
     public static class Item {
         private Long purchaseRequestId;
         private Long storeId;
+        private String storeName;
+        private String storeCode;
+        private Long requestedByUserId;
         private String status;
         private LocalDateTime createdAt;
     }

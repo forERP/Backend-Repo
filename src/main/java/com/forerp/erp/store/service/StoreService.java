@@ -1,6 +1,7 @@
 package com.forerp.erp.store.service;
 
 import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.common.jwt.SecurityUtil;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.store.domain.StoreStatus;
@@ -11,6 +12,8 @@ import com.forerp.erp.store.service.support.StoreReader;
 import com.forerp.erp.store.service.support.StoreResponseMapper;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,6 +102,13 @@ public class StoreService {
                 .collect(Collectors.toList());
     }
 
+    public Page<StoreDto.Response> searchStores(String name, String code, String status, Pageable pageable) {
+        StoreStatus storeStatus = QueryParamParser.parseEnumOrNull(status, StoreStatus.class, "status");
+
+        return storeRepository.search(normalize(name), normalize(code), storeStatus, pageable)
+                .map(storeResponseMapper::toDto);
+    }
+
     // 단건 조회
     public StoreDto.Response getStore(Long id){
         return storeResponseMapper.toDto(storeReader.getStore(id));
@@ -111,5 +121,13 @@ public class StoreService {
         }catch (Exception e){
 
         }
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

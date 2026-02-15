@@ -1,5 +1,6 @@
 package com.forerp.erp.product.service;
 
+import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.product.domain.*;
 import com.forerp.erp.product.dto.*;
 import com.forerp.erp.product.repository.*;
@@ -47,8 +48,10 @@ public class ProductService {
 
     // 관리자용 상품 목록 단순 조회
     @Transactional(readOnly = true)
-    public Page<ProductListResponseDto> getAllProducts(Pageable pageable){
-        return productRepository.findAll(pageable)
+    public Page<ProductListResponseDto> getAllProducts(String name, String sku, String status, Pageable pageable){
+        ProductStatus productStatus = QueryParamParser.parseEnumOrNull(status, ProductStatus.class, "status");
+
+        return productRepository.search(normalize(name), normalize(sku), productStatus, pageable)
                 .map(page -> new ProductListResponseDto(
                         page.getId(),
                         page.getSku(),
@@ -57,6 +60,14 @@ public class ProductService {
                         page.getMsrpPrice(),
                         page.getStatus()
                 ));
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     // 단건 조회

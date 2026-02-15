@@ -43,10 +43,13 @@ public class ProductController {
             content = @Content(schema = @Schema(implementation = Page.class)))
     @GetMapping
     public ResponseEntity<Page<ProductListResponseDto>> getProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String sku,
+            @RequestParam(required = false) String status,
             @Parameter(description = "페이지 정보(page/size)")
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ){
-        return ResponseEntity.ok(productService.getAllProducts(pageable));
+        return ResponseEntity.ok(productService.getAllProducts(name, sku, status, pageable));
     }
 
     @Operation(summary = "상품 단건 조회", description = "상품 ID로 단건 조회")
