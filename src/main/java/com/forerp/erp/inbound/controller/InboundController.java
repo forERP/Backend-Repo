@@ -96,6 +96,12 @@ public class InboundController {
             @Parameter(description = "매장 ID(선택)", example = "1")
             @RequestParam(required = false) Long storeId,
 
+            @Parameter(description = "매장명(선택, 부분일치)", example = "강남")
+            @RequestParam(required = false) String storeName,
+
+            @Parameter(description = "매장코드(선택, 부분일치)", example = "ST")
+            @RequestParam(required = false) String storeCode,
+
             @Parameter(description = "입고 상태(선택): CREATED/CONFIRMED/CANCELED", example = "CREATED")
             @RequestParam(required = false) String status,
 
@@ -113,6 +119,6 @@ public class InboundController {
             @Min(1) @Max(100)
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(inboundService.listInbounds(storeId, status, from, to, page, size));
+        return ResponseEntity.ok(inboundService.listInbounds(storeId, storeName, storeCode, status, from, to, page, size));
     }
 }

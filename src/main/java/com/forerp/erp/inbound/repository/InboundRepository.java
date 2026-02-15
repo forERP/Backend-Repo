@@ -18,6 +18,8 @@ public interface InboundRepository extends JpaRepository<Inbound, Long> {
         select i
         from Inbound i
         where (:storeId is null or i.store.id = :storeId)
+          and (:storeName is null or lower(i.store.name) like lower(concat('%', :storeName, '%')))
+          and (:storeCode is null or lower(i.store.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:status is null or i.status = :status)
           and (:fromDt is null or i.createdAt >= :fromDt)
           and (:toDt is null or i.createdAt < :toDt)
@@ -25,6 +27,8 @@ public interface InboundRepository extends JpaRepository<Inbound, Long> {
     """)
     Page<Inbound> search(
             @Param("storeId") Long storeId,
+            @Param("storeName") String storeName,
+            @Param("storeCode") String storeCode,
             @Param("status") InboundStatus status,
             @Param("fromDt") LocalDateTime fromDt,
             @Param("toDt") LocalDateTime toDt,

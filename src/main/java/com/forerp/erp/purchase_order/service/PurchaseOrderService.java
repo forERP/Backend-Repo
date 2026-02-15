@@ -48,7 +48,11 @@ public class PurchaseOrderService {
     @Transactional(readOnly = true)
     public PurchaseOrderListResponse list(
             Long storeId,
+            String storeName,
+            String storeCode,
             Long warehouseId,
+            Long supplierId,
+            String supplierName,
             String status,
             String from,
             String to,
@@ -58,16 +62,33 @@ public class PurchaseOrderService {
         PurchaseOrderStatus st = QueryParamParser.parseEnumOrNull(status, PurchaseOrderStatus.class, "status");
         LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
+        String storeNameKeyword = normalizeKeyword(storeName);
+        String storeCodeKeyword = normalizeKeyword(storeCode);
+        String supplierNameKeyword = normalizeKeyword(supplierName);
 
         PageRequest pageable = PageRequest.of(page, size);
-        Page<PurchaseOrder> result = purchaseOrderRepository.search(storeId, warehouseId, st, fromDt, toDt, pageable);
+        Page<PurchaseOrder> result = purchaseOrderRepository.search(
+                storeId,
+                storeNameKeyword,
+                storeCodeKeyword,
+                warehouseId,
+                supplierId,
+                supplierNameKeyword,
+                st,
+                fromDt,
+                toDt,
+                pageable
+        );
 
         List<PurchaseOrderListResponse.Item> content = result.getContent().stream()
                 .map(po -> new PurchaseOrderListResponse.Item(
                         po.getId(),
                         po.getPurchaseRequest() == null ? null : po.getPurchaseRequest().getId(),
                         po.getSupplier().getId(),
+                        po.getSupplier().getName(),
                         po.getStore().getId(),
+                        po.getStore().getName(),
+                        po.getStore().getStoreCode(),
                         po.getWarehouse().getId(),
                         po.getStatus().name(),
                         po.getCreatedAt(),
@@ -82,5 +103,13 @@ public class PurchaseOrderService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+        String trimmed = keyword.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

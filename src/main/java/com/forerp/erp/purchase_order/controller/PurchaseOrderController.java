@@ -39,14 +39,32 @@ public class PurchaseOrderController {
     @GetMapping
     public ResponseEntity<PurchaseOrderListResponse> list(
             @RequestParam(required = false) Long storeId,
+            @RequestParam(required = false) String storeName,
+            @RequestParam(required = false) String storeCode,
             @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) Long supplierId,
+            @RequestParam(required = false) String supplierName,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
-        return ResponseEntity.ok(purchaseOrderService.list(storeId, warehouseId, status, from, to, page, size));
+        return ResponseEntity.ok(
+                purchaseOrderService.list(
+                        storeId,
+                        storeName,
+                        storeCode,
+                        warehouseId,
+                        supplierId,
+                        supplierName,
+                        status,
+                        from,
+                        to,
+                        page,
+                        size
+                )
+        );
     }
 
     @Operation(summary = "발주 확정(ORDERED)", description = "PurchaseOrder.CREATED -> ORDERED")

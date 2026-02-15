@@ -94,6 +94,8 @@ public class InboundService {
     @Transactional(readOnly = true)
     public InboundListResponse listInbounds(
             Long storeId,
+            String storeName,
+            String storeCode,
             String status,
             String from,
             String to,
@@ -103,14 +105,19 @@ public class InboundService {
         InboundStatus st = QueryParamParser.parseEnumOrNull(status, InboundStatus.class, "status");
         LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
+        String storeNameKeyword = normalizeKeyword(storeName);
+        String storeCodeKeyword = normalizeKeyword(storeCode);
 
         PageRequest pageable = PageRequest.of(page, size);
-        Page<Inbound> result = inboundRepository.search(storeId, st, fromDt, toDt, pageable);
+        Page<Inbound> result = inboundRepository.search(storeId, storeNameKeyword, storeCodeKeyword, st, fromDt, toDt, pageable);
 
         List<InboundListResponse.InboundListItem> content = result.getContent().stream()
                 .map(i -> new InboundListResponse.InboundListItem(
                         i.getId(),
+                        i.getPurchaseOrder() == null ? null : i.getPurchaseOrder().getId(),
                         i.getStore().getId(),
+                        i.getStore().getName(),
+                        i.getStore().getStoreCode(),
                         i.getWarehouse().getId(),
                         i.getStatus().name(),
                         i.getCreatedAt(),
@@ -125,5 +132,13 @@ public class InboundService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+        String trimmed = keyword.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

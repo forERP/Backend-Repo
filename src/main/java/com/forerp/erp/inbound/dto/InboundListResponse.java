@@ -26,7 +26,10 @@ public class InboundListResponse {
     @AllArgsConstructor
     public static class InboundListItem {
         private Long inboundId;
+        private Long purchaseOrderId;
         private Long storeId;
+        private String storeName;
+        private String storeCode;
         private Long warehouseId;
         private String status;
         private LocalDateTime createdAt;

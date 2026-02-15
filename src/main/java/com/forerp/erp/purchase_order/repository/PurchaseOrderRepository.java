@@ -25,14 +25,22 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     @Query("""
         select po from PurchaseOrder po
         where (:storeId is null or po.store.id = :storeId)
+          and (:storeName is null or lower(po.store.name) like lower(concat('%', :storeName, '%')))
+          and (:storeCode is null or lower(po.store.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:warehouseId is null or po.warehouse.id = :warehouseId)
+          and (:supplierId is null or po.supplier.id = :supplierId)
+          and (:supplierName is null or lower(po.supplier.name) like lower(concat('%', :supplierName, '%')))
           and (:status is null or po.status = :status)
           and (:fromDt is null or po.createdAt >= :fromDt)
           and (:toDt is null or po.createdAt < :toDt)
         """)
     Page<PurchaseOrder> search(
             @Param("storeId") Long storeId,
+            @Param("storeName") String storeName,
+            @Param("storeCode") String storeCode,
             @Param("warehouseId") Long warehouseId,
+            @Param("supplierId") Long supplierId,
+            @Param("supplierName") String supplierName,
             @Param("status") PurchaseOrderStatus status,
             @Param("fromDt") LocalDateTime fromDt,
             @Param("toDt") LocalDateTime toDt,

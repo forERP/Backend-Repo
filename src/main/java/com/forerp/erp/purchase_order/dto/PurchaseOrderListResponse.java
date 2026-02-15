@@ -25,7 +25,10 @@ public class PurchaseOrderListResponse {
         private Long purchaseOrderId;
         private Long purchaseRequestId;
         private Long supplierId;
+        private String supplierName;
         private Long storeId;
+        private String storeName;
+        private String storeCode;
         private Long warehouseId;
         private String status;
         private LocalDateTime createdAt;
