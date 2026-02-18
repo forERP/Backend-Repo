@@ -1,6 +1,7 @@
 package com.forerp.erp.attendance.dto;
 
 import com.forerp.erp.attendance.domain.AttendanceStatus;
+import com.forerp.erp.user.domain.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,10 @@ public class AttendanceDto {
     @AllArgsConstructor
     public static class StatusResponse{
             private String userName;
+            private UserRole role;
             private AttendanceStatus status;
+            private LocalDateTime clockIn;
+            private LocalDateTime clockOut;
     }
 
     @Getter

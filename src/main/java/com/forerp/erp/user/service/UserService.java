@@ -1,5 +1,7 @@
 package com.forerp.erp.user.service;
 
+import com.forerp.erp.attendance.domain.Attendance;
+import com.forerp.erp.attendance.repository.AttendanceRepository;
 import com.forerp.erp.auditlog.AuditLogService;
 import com.forerp.erp.common.jwt.JwtUtil;
 import com.forerp.erp.common.jwt.SecurityUtil;
@@ -38,6 +40,7 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final AuditLogService auditLogService;
     private final SecurityUtil securityUtil;
+    private final AttendanceRepository attendanceRepository;
 
     @Transactional
     public UserResponseDto createUser(UserCreateRequestDto request) {
@@ -97,11 +100,29 @@ public class UserService {
         return generateTokenResponse(user);
     }
 
+    @Transactional
     public LoginResponseDto loginPos(String storeCode, String employeeCode) {
         User user = userReader.getUserForPos(storeCode, employeeCode);
         validateActiveUser(user);
 
+        if (isAutoAttendanceRole(user.getRole())) {
+            autoClockInForStoreAdmin(user);
+        }
+
         return generateTokenResponse(user);
+    }
+
+    @Transactional
+    public void logoutPos(String storeCode, String employeeCode) {
+        User user = userReader.getUserForPos(storeCode, employeeCode);
+        validateActiveUser(user);
+
+        if (!isAutoAttendanceRole(user.getRole())) {
+            return;
+        }
+
+        attendanceRepository.findTopByUser_IdAndClockOutIsNullOrderByClockInDesc(user.getId())
+                .ifPresent(Attendance::recordClockOut);
     }
 
     public UserResponseDto getUser(Long id) {
@@ -159,6 +180,25 @@ public class UserService {
     private LoginResponseDto generateTokenResponse(User user) {
         String token = jwtUtil.generateToken(user.getLoginId());
         return new LoginResponseDto(token, user.getRole(), user.getId());
+    }
+
+    private void autoClockInForStoreAdmin(User user) {
+        LocalDate today = LocalDate.now();
+        if (attendanceRepository.existsByUser_IdAndWorkDate(user.getId(), today)) {
+            return;
+        }
+
+        Attendance attendance = Attendance.clockInBuilder()
+                .user(user)
+                .workDate(today)
+                .clockIn(LocalDateTime.now())
+                .build();
+
+        attendanceRepository.save(attendance);
+    }
+
+    private boolean isAutoAttendanceRole(UserRole role) {
+        return role == UserRole.STORE_ADMIN || role == UserRole.HQ_ADMIN;
     }
 
     private void logAction(String action, Long targetId) {

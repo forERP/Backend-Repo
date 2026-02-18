@@ -7,6 +7,7 @@ import com.forerp.erp.attendance.repository.AttendanceRepository;
 import com.forerp.erp.attendance.service.support.AttendanceReader;
 import com.forerp.erp.attendance.service.support.AttendanceResponseMapper;
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.user.domain.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class AttendanceService {
     // 출근 처리(POS)
     public AttendanceDto.Response clockIn(AttendanceDto.ClockInRequest request) {
         User user = attendanceReader.getUserForPos(request.getStoreCode(), request.getEmployeeCode());
+        validateManualAttendanceAllowed(user);
         attendanceReader.validateNoDuplicateAttendance(user.getId(), LocalDate.now());
 
         Attendance attendance = Attendance.clockInBuilder()
@@ -48,6 +50,7 @@ public class AttendanceService {
     public AttendanceDto.Response clockOut(AttendanceDto.ClockInRequest request) {
         User user = attendanceReader.getUserForPos(request.getStoreCode(),
                 request.getEmployeeCode());
+        validateManualAttendanceAllowed(user);
 
         Attendance attendance = attendanceReader.getWorkingAttendance(user.getId());
 
@@ -87,11 +90,22 @@ public class AttendanceService {
         Optional<Attendance> today = attendanceRepository.findByUser_IdAndWorkDate(user.getId(), LocalDate.now());
 
         if (today.isEmpty()) {
-            return new AttendanceDto.StatusResponse(user.getName(), null);
+            return new AttendanceDto.StatusResponse(user.getName(), user.getRole(), null, null, null);
         }
-        return new AttendanceDto.StatusResponse(user.getName(), today.get().getStatus());
+
+        Attendance attendance = today.get();
+        return new AttendanceDto.StatusResponse(
+                user.getName(),
+                user.getRole(),
+                attendance.getStatus(),
+                attendance.getClockIn(),
+                attendance.getClockOut()
+        );
+    }
+
+    private void validateManualAttendanceAllowed(User user) {
+        if (user.getRole() == UserRole.STORE_ADMIN || user.getRole() == UserRole.HQ_ADMIN) {
+            throw new IllegalArgumentException("관리자 출퇴근은 로그인/마감으로 자동 처리됩니다.");
+        }
     }
 }
-
-
-

@@ -58,6 +58,15 @@ public class UserController {
         return ResponseEntity.ok(userService.loginPos(storeCode, employeeCode));
     }
 
+    @PostMapping("/logout/pos")
+    public ResponseEntity<Void> logoutPos(@RequestBody Map<String, String> request) {
+        String storeCode = request.get("storeCode");
+        String employeeCode = request.get("employeeCode");
+
+        userService.logoutPos(storeCode, employeeCode);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUser(id));
