@@ -12,6 +12,8 @@ import java.util.List;
 
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     List<Warehouse> findByStore_Id(Long storeId);
+    List<Warehouse> findByStore_IdAndActiveTrue(Long storeId);
+    List<Warehouse> findByActiveTrue();
 
     @EntityGraph(attributePaths = {"store"})
     @Query("""

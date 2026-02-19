@@ -6,6 +6,7 @@ import com.forerp.erp.warehouse.dto.WarehouseRequestDto;
 import com.forerp.erp.warehouse.dto.WarehouseUpdateRequestDto;
 import com.forerp.erp.warehouse.repository.WarehouseRepository;
 import com.forerp.erp.store.repository.StoreRepository;
+import com.forerp.erp.storeproduct.service.StoreProductSyncService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,7 +30,8 @@ import java.util.List;
 public class WarehouseController {
 
     private final WarehouseRepository warehouseRepository;
-        private final StoreRepository storeRepository;
+    private final StoreRepository storeRepository;
+    private final StoreProductSyncService storeProductSyncService;
 
     @Operation(summary = "창고 단건 조회")
     @ApiResponse(responseCode = "200", description = "OK",
@@ -85,6 +87,7 @@ public class WarehouseController {
 
                 Warehouse warehouse = Warehouse.create(store, request.getCode(), request.getName());
                 Warehouse saved = warehouseRepository.save(warehouse);
+                storeProductSyncService.syncActiveProductsToWarehouse(saved);
                 return ResponseEntity.ok(WarehouseResponseDto.from(saved));
         }
 

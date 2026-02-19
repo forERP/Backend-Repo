@@ -4,6 +4,7 @@ import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.product.domain.*;
 import com.forerp.erp.product.dto.*;
 import com.forerp.erp.product.repository.*;
+import com.forerp.erp.storeproduct.service.StoreProductSyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
+    private final StoreProductSyncService storeProductSyncService;
 
     @Transactional
     public ProductCreateResponseDto createProduct(ProductCreateRequestDto request) {
@@ -42,6 +44,7 @@ public class ProductService {
         String sku = String.format("PRD%d%06d", Year.now().getValue(), prd.getId());
         prd.updateSku(sku);
         productRepository.save(prd);
+        storeProductSyncService.syncActiveProductToActiveWarehouses(prd);
 
         return new ProductCreateResponseDto(prd.getId(), sku);
     }
@@ -119,5 +122,6 @@ public class ProductService {
             throw new IllegalArgumentException("단종 처리된 상품만 재등록할 수 있습니다.");
         }
         product.reactivate();
+        storeProductSyncService.syncActiveProductToActiveWarehouses(product);
     }
 }

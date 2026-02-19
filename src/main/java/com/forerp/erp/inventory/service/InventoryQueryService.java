@@ -2,8 +2,11 @@ package com.forerp.erp.inventory.service;
 
 import com.forerp.erp.inventory.dto.InventoryListResponse;
 import com.forerp.erp.inventory.dto.InventoryResponse;
+import com.forerp.erp.product.domain.ProductStatus;
+import com.forerp.erp.storeproduct.domain.SaleStatus;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.storeproduct.repository.StoreProductRepository;
+import com.forerp.erp.storeproduct.service.StoreProductSyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,22 +21,44 @@ import java.util.List;
 public class InventoryQueryService {
 
     private final StoreProductRepository storeProductRepository;
+    private final StoreProductSyncService storeProductSyncService;
 
     public InventoryListResponse list(Long storeId, Long warehouseId, String keyword, int page, int size) {
-        String kw = (keyword == null) ? "" : keyword.trim();
+        return list(storeId, warehouseId, null, null, keyword, null, page, size);
+    }
+
+    public InventoryListResponse list(
+            Long storeId,
+            Long warehouseId,
+            String storeKeyword,
+            String warehouseKeyword,
+            String productKeyword,
+            SaleStatus saleStatus,
+            int page,
+            int size
+    ) {
+        String normalizedStoreKeyword = normalizeKeyword(storeKeyword);
+        String normalizedWarehouseKeyword = normalizeKeyword(warehouseKeyword);
+        String normalizedProductKeyword = normalizeKeyword(productKeyword);
         PageRequest pageable = PageRequest.of(page, size);
 
-        Page<StoreProduct> result = (warehouseId == null)
-                ? storeProductRepository.findByStore_IdAndProduct_NameContaining(storeId, kw, pageable)
-                : storeProductRepository.findByStore_IdAndWarehouse_IdAndProduct_NameContaining(storeId, warehouseId, kw, pageable);
+        if (page == 0 && (storeId != null || warehouseId != null)) {
+            storeProductSyncService.syncActiveProductsForStore(storeId, warehouseId);
+        }
+
+        Page<StoreProduct> result = storeProductRepository.searchInventory(
+                storeId,
+                warehouseId,
+                normalizedStoreKeyword,
+                normalizedWarehouseKeyword,
+                normalizedProductKeyword,
+                saleStatus,
+                ProductStatus.ACTIVE,
+                pageable
+        );
 
         List<InventoryListResponse.InventoryItem> content = result.getContent().stream()
-                .map(sp -> new InventoryListResponse.InventoryItem(
-                        sp.getProduct().getId(),
-                        sp.getProduct().getName(),
-                        sp.getQuantity(),
-                        sp.getUpdatedAt()
-                ))
+                .map(this::toListItem)
                 .toList();
 
         return new InventoryListResponse(
@@ -46,17 +71,69 @@ public class InventoryQueryService {
     }
 
     public InventoryResponse get(Long storeId, Long warehouseId, Long productId) {
-        StoreProduct sp = (warehouseId == null)
-                ? storeProductRepository.findByStore_IdAndProduct_Id(storeId, productId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 매장 재고를 찾을 수 없습니다."))
-                : storeProductRepository.findByStore_IdAndWarehouse_IdAndProduct_Id(storeId, warehouseId, productId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 창고 재고를 찾을 수 없습니다."));
+        storeProductSyncService.syncActiveProductsForStore(storeId, warehouseId);
 
-        return new InventoryResponse(
-                sp.getProduct().getId(),
-                sp.getProduct().getName(),
-                sp.getQuantity(),
-                sp.getUpdatedAt()
+        StoreProduct storeProduct = (warehouseId == null)
+                ? storeProductRepository.findFirstByStore_IdAndProduct_IdAndProduct_StatusOrderByUpdatedAtDesc(
+                storeId, productId, ProductStatus.ACTIVE
+        ).orElseThrow(() -> new IllegalArgumentException("해당 매장의 활성 상품 재고를 찾을 수 없습니다."))
+                : storeProductRepository.findByStore_IdAndWarehouse_IdAndProduct_IdAndProduct_Status(
+                storeId, warehouseId, productId, ProductStatus.ACTIVE
+        ).orElseThrow(() -> new IllegalArgumentException("해당 창고의 활성 상품 재고를 찾을 수 없습니다."));
+
+        return toResponse(storeProduct);
+    }
+
+    public InventoryResponse getByStoreProductId(Long storeProductId) {
+        StoreProduct storeProduct = storeProductRepository.findDetailById(storeProductId)
+                .orElseThrow(() -> new IllegalArgumentException("매장상품을 찾을 수 없습니다. storeProductId=" + storeProductId));
+        return toResponse(storeProduct);
+    }
+
+    InventoryListResponse.InventoryItem toListItem(StoreProduct storeProduct) {
+        return new InventoryListResponse.InventoryItem(
+                storeProduct.getId(),
+                storeProduct.getStore().getId(),
+                storeProduct.getStore().getName(),
+                storeProduct.getStore().getStoreCode(),
+                storeProduct.getWarehouse().getId(),
+                storeProduct.getWarehouse().getCode(),
+                storeProduct.getWarehouse().getName(),
+                storeProduct.getProduct().getId(),
+                storeProduct.getProduct().getSku(),
+                storeProduct.getProduct().getName(),
+                storeProduct.getQuantity(),
+                storeProduct.getSaleStatus(),
+                storeProduct.getSalePrice(),
+                storeProduct.getProduct().getMsrpPrice(),
+                storeProduct.getUpdatedAt()
         );
+    }
+
+    InventoryResponse toResponse(StoreProduct storeProduct) {
+        return new InventoryResponse(
+                storeProduct.getId(),
+                storeProduct.getStore().getId(),
+                storeProduct.getStore().getName(),
+                storeProduct.getStore().getStoreCode(),
+                storeProduct.getWarehouse().getId(),
+                storeProduct.getWarehouse().getCode(),
+                storeProduct.getWarehouse().getName(),
+                storeProduct.getProduct().getId(),
+                storeProduct.getProduct().getSku(),
+                storeProduct.getProduct().getName(),
+                storeProduct.getQuantity(),
+                storeProduct.getSaleStatus(),
+                storeProduct.getSalePrice(),
+                storeProduct.getUpdatedAt()
+        );
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+        String trimmed = keyword.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

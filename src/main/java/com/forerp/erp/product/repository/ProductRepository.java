@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
+    java.util.List<Product> findAllByStatus(ProductStatus status);
+
     @Query("""
         select p from Product p
         where (:name is null or lower(p.name) like lower(concat('%', :name, '%')))
