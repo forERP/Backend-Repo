@@ -1,6 +1,5 @@
 package com.forerp.erp.user.repository;
 
-import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.domain.UserRole;
 import com.forerp.erp.user.domain.UserStatus;
@@ -21,11 +20,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByStore_StoreCodeAndEmployeeCode(String storeCode, String employeeCode);
 
-    long countByStore(Store store);
-
     boolean existsByLoginId(String loginId);
 
     boolean existsByEmployeeCode(String employeeCode);
+
+    @Query("select max(u.employeeCode) from User u")
+    String findMaxEmployeeCode();
 
     @Query("""
         select u from User u

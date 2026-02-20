@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
+    java.util.Optional<Product> findBySku(String sku);
+
     java.util.List<Product> findAllByStatus(ProductStatus status);
 
     java.util.List<Product> findByCategory_IdOrderByNameAsc(Long categoryId);

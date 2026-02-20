@@ -15,6 +15,7 @@ public class AdminBootstrapProperties {
     private String employeeCode;
     private String password;
     private String name;
+    private String phoneNumber = "010-0000-0000";
     private UserRole role = UserRole.HQ_ADMIN;
 
     private String storeCode = "000";

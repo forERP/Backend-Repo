@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"store_id", "employee_code"})
+        @UniqueConstraint(columnNames = {"employee_code"})
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,6 +33,9 @@ public class User {
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Column(name = "phone_number", nullable = false, length = 20)
+    private String phoneNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id")
@@ -60,6 +63,7 @@ public class User {
                 String employeeCode,
                 String passwordHash,
                 String name,
+                String phoneNumber,
                 Store store,
                 UserRole role) {
 
@@ -67,14 +71,23 @@ public class User {
         this.employeeCode = employeeCode;
         this.passwordHash = passwordHash;
         this.name = name;
+        this.phoneNumber = phoneNumber;
         this.store = store;
         this.role = role;
         this.status = UserStatus.ACTIVE;
     }
 
     // 회원 정보 수정
-    public void updateInfo(String name, String passwordHash, Store store, UserRole role, UserStatus status){
+    public void updateInfo(
+            String name,
+            String phoneNumber,
+            String passwordHash,
+            Store store,
+            UserRole role,
+            UserStatus status
+    ) {
         if (name != null) this.name = name;
+        if (phoneNumber != null && !phoneNumber.isBlank()) this.phoneNumber = phoneNumber;
         if (passwordHash != null) this.passwordHash = passwordHash;
         if (store != null) this.store = store;
         if (role != null) this.role = role;

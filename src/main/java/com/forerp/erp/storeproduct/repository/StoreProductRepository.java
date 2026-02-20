@@ -91,12 +91,32 @@ public interface StoreProductRepository extends JpaRepository<StoreProduct, Long
             @Param("productIds") List<Long> productIds
     );
 
-    @Query("SELECT new com.forerp.erp.store.dto.StoreProductListResponseDto(" +
-            "p.id, p.sku, p.name, p.category.name, p.msrpPrice, " +
-            "sp.id, sp.quantity, sp.saleStatus, sp.salePrice) " +
-            " FROM Product p " +
-            " LEFT JOIN StoreProduct sp ON p.id = sp.product.id AND sp.store.id = :storeId " +
-            " WHERE p.status = 'ACTIVE'")
+    @Query("""
+        select new com.forerp.erp.store.dto.StoreProductListResponseDto(
+            p.id,
+            p.sku,
+            p.name,
+            p.category.name,
+            p.category.imageUrl,
+            p.imageUrl,
+            p.msrpPrice,
+            max(sp.id),
+            coalesce(sum(sp.quantity), 0),
+            case
+                when sum(case when sp.saleStatus = com.forerp.erp.storeproduct.domain.SaleStatus.ON then 1 else 0 end) > 0
+                    then com.forerp.erp.storeproduct.domain.SaleStatus.ON
+                else com.forerp.erp.storeproduct.domain.SaleStatus.OFF
+            end,
+            coalesce(max(sp.salePrice), p.msrpPrice)
+        )
+        from Product p
+        left join StoreProduct sp
+            on p.id = sp.product.id
+           and sp.store.id = :storeId
+        where p.status = com.forerp.erp.product.domain.ProductStatus.ACTIVE
+        group by p.id, p.sku, p.name, p.category.name, p.category.imageUrl, p.imageUrl, p.msrpPrice
+        order by p.name asc
+        """)
     Page<StoreProductListResponseDto> findAllProductsWithStoreInfo(
             @Param("storeId") Long storeId,
             Pageable pageable

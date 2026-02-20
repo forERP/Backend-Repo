@@ -47,14 +47,14 @@ public class UserService {
         userReader.validateNewUser(request.getLoginId());
         Store store = userReader.getStore(request.getStoreId());
 
-        long nextSequence = userReader.getNextEmployeeSequence(store);
-        String generatedEmployeeCode = String.format("%04d", nextSequence);
+        String generatedEmployeeCode = generateNextEmployeeCode();
 
         User user = User.builder()
                 .loginId(request.getLoginId())
                 .employeeCode(generatedEmployeeCode)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
+                .phoneNumber(request.getPhoneNumber().trim())
                 .store(store)
                 .role(request.getRole())
                 .build();
@@ -83,7 +83,14 @@ public class UserService {
             encodedPassword = passwordEncoder.encode(request.getPassword());
         }
 
-        user.updateInfo(request.getName(), encodedPassword, store, request.getRole(), request.getStatus());
+        user.updateInfo(
+                request.getName(),
+                trimToNull(request.getPhoneNumber()),
+                encodedPassword,
+                store,
+                request.getRole(),
+                request.getStatus()
+        );
         logAction("UPDATE_USER", user.getId());
 
         return new UserResponseDto(user);
@@ -219,6 +226,10 @@ public class UserService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    private String trimToNull(String value) {
+        return normalize(value);
+    }
+
     private UserStatus parseStatus(String status) {
         if (status == null || status.isBlank()) {
             return null;
@@ -241,5 +252,17 @@ public class UserService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid user role: " + role);
         }
+    }
+
+    private String generateNextEmployeeCode() {
+        long nextSequence = userReader.getNextEmployeeSequence();
+        String employeeCode = String.format("%04d", nextSequence);
+
+        while (userRepository.existsByEmployeeCode(employeeCode)) {
+            nextSequence++;
+            employeeCode = String.format("%04d", nextSequence);
+        }
+
+        return employeeCode;
     }
 }

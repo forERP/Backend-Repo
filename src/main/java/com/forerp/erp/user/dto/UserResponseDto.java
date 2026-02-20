@@ -15,6 +15,7 @@ public class UserResponseDto {
     private final String loginId;
     private final String employeeCode;
     private final String name;
+    private final String phoneNumber;
     private final Long storeId;
     private final String storeCode;
     private final String storeName;
@@ -27,6 +28,7 @@ public class UserResponseDto {
         this.loginId = user.getLoginId();
         this.employeeCode = user.getEmployeeCode();
         this.name = user.getName();
+        this.phoneNumber = user.getPhoneNumber();
         this.storeId = (user.getStore() == null) ? null : user.getStore().getId();
         this.storeCode = (user.getStore() == null) ? null : user.getStore().getStoreCode();
         this.storeName = (user.getStore() == null) ? null : user.getStore().getName();

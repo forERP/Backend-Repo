@@ -38,12 +38,35 @@ public class UserReader {
             throw new IllegalArgumentException("이미 사용 중인 로그인 ID 입니다.");
         }
     }
-    public long getNextEmployeeSequence(Store store){
-        if(store == null) return 0;
-        return userRepository.countByStore(store) + 1;
+    public long getNextEmployeeSequence() {
+        String maxEmployeeCode = userRepository.findMaxEmployeeCode();
+        Long parsedFromMax = parseEmployeeCode(maxEmployeeCode);
+        if (parsedFromMax != null) {
+            return parsedFromMax + 1;
+        }
+
+        long max = userRepository.findAll().stream()
+                .map(User::getEmployeeCode)
+                .map(this::parseEmployeeCode)
+                .filter(code -> code != null)
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L);
+
+        return max + 1;
     }
 
     public List<User> getAllUsers(){
         return userRepository.findAll();
+    }
+
+    private Long parseEmployeeCode(String employeeCode) {
+        if (employeeCode == null || employeeCode.isBlank()) {
+            return null;
+        }
+        if (!employeeCode.chars().allMatch(Character::isDigit)) {
+            return null;
+        }
+        return Long.parseLong(employeeCode);
     }
 }

@@ -59,6 +59,7 @@ public class AdminBootstrapper implements ApplicationRunner {
                 .employeeCode(props.getEmployeeCode())
                 .passwordHash(passwordEncoder.encode(props.getPassword()))
                 .name(props.getName())
+                .phoneNumber(props.getPhoneNumber())
                 .store(hqStore)
                 .role(props.getRole())
                 .build();
