@@ -10,6 +10,7 @@ import com.forerp.erp.discard.service.support.DiscardBuilder;
 import com.forerp.erp.discard.service.support.DiscardLoader;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
+import com.forerp.erp.realtime.service.RealtimeEventService;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -26,6 +27,7 @@ public class DiscardService {
 
     private final DiscardRepository discardRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
+    private final RealtimeEventService realtimeEventService;
 
     private final DiscardLoader loader;
     private final DiscardBuilder builder;
@@ -50,6 +52,7 @@ public class DiscardService {
         });
 
         discard.confirm();
+        realtimeEventService.publishInventoryChanged(discard.getStore().getId(), "discard_confirmed");
         return discard;
     }
 

@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 public interface OutboundRepository extends JpaRepository<Outbound, Long> {
 
@@ -44,4 +46,10 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
 
     // 주문 취소 제약용
     boolean existsByOrder_Id(Long orderId);
+
+    @EntityGraph(attributePaths = {"order", "store", "shipment", "items", "items.orderItem", "items.storeProduct", "items.storeProduct.warehouse"})
+    Optional<Outbound> findByOrder_Id(Long orderId);
+
+    @EntityGraph(attributePaths = {"order", "store", "shipment", "items", "items.orderItem", "items.storeProduct", "items.storeProduct.warehouse"})
+    List<Outbound> findByOrder_IdIn(List<Long> orderIds);
 }

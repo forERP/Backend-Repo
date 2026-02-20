@@ -18,6 +18,7 @@ import java.util.List;
 public class InboundResponse {
     private Long inboundId;
     private Long purchaseOrderId;
+    private LocalDateTime purchaseOrderCreatedAt;
     private Long storeId;
     private Long warehouseId;
     private String status; // CREATED/CONFIRMED/CANCELED
@@ -44,6 +45,7 @@ public class InboundResponse {
         return new InboundResponse(
                 inbound.getId(),
                 inbound.getPurchaseOrder().getId(),
+                inbound.getPurchaseOrder().getCreatedAt(),
                 inbound.getStore().getId(),
                 inbound.getWarehouse().getId(),
                 inbound.getStatus().name(),

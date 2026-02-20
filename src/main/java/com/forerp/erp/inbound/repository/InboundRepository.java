@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 public interface InboundRepository extends JpaRepository<Inbound, Long> {
 
-    @EntityGraph(attributePaths = {"store", "warehouse", "shipment"})
+    @EntityGraph(attributePaths = {"store", "warehouse", "shipment", "purchaseOrder"})
     @Query("""
         select i
         from Inbound i
@@ -34,4 +34,6 @@ public interface InboundRepository extends JpaRepository<Inbound, Long> {
             @Param("toDt") LocalDateTime toDt,
             Pageable pageable
     );
+
+    boolean existsByPurchaseOrder_Id(Long purchaseOrderId);
 }

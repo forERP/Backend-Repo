@@ -17,6 +17,7 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     @EntityGraph(attributePaths = {
             "supplier",
             "purchaseRequest",
+            "authoredBy",
             "store",
             "warehouse",
             "items",
@@ -48,12 +49,14 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     );
 
     @EntityGraph(attributePaths = {
-            "supplier","purchaseRequest","store","warehouse","items","items.product"
+            "supplier","purchaseRequest","authoredBy","store","warehouse","items","items.product"
     })
     @Query("select po from PurchaseOrder po where po.id = :id")
     Optional<PurchaseOrder> findDetailById(@Param("id") Long id);
 
     boolean existsByPurchaseRequest_Id(Long purchaseRequestId);
+
+    Optional<PurchaseOrder> findByPurchaseRequest_Id(Long purchaseRequestId);
 
     @EntityGraph(attributePaths = {"store", "warehouse", "items", "items.product"})
     @Query("select po from PurchaseOrder po where po.id = :id")

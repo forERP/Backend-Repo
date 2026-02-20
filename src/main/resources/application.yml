@@ -3,4 +3,12 @@ spring:
     name: erp-backend
 
 server:
-  port: 8081
+  port: 8089
+
+toss:
+  api:
+    base-url: ${TOSS_API_BASE_URL:https://api.tosspayments.com}
+    version: ${TOSS_API_VERSION:2022-11-16}
+    client-key: ${TOSS_CLIENT_KEY:}
+    secret-key: ${TOSS_SECRET_KEY:}
+    security-key: ${TOSS_SECURITY_KEY:}

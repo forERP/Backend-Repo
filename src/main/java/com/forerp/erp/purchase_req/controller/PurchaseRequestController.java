@@ -18,9 +18,15 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "PurchaseRequest", description = "발주요청(지점→본사) API (관리자)")
+@Tag(name = "PurchaseRequest", description = "Purchase request API")
 @RestController
 @RequestMapping("/api/purchase-requests")
 public class PurchaseRequestController {
@@ -31,7 +37,7 @@ public class PurchaseRequestController {
         this.purchaseRequestService = purchaseRequestService;
     }
 
-    @Operation(summary = "발주요청 생성", description = "STORE_ADMIN이 발주요청 문서를 생성합니다.")
+    @Operation(summary = "Create purchase request")
     @ApiResponse(responseCode = "201", description = "Created",
             content = @Content(schema = @Schema(implementation = PurchaseRequestResponse.class)))
     @PostMapping
@@ -43,7 +49,7 @@ public class PurchaseRequestController {
         return ResponseEntity.status(201).body(PurchaseRequestResponse.from(pr));
     }
 
-    @Operation(summary = "발주요청 단건 조회")
+    @Operation(summary = "Get purchase request")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseRequestResponse.class)))
     @GetMapping("/{purchaseRequestId}")
@@ -52,7 +58,7 @@ public class PurchaseRequestController {
         return ResponseEntity.ok(PurchaseRequestResponse.from(pr));
     }
 
-    @Operation(summary = "발주요청 목록 조회/검색")
+    @Operation(summary = "List purchase requests")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseRequestListResponse.class)))
     @GetMapping
@@ -69,19 +75,40 @@ public class PurchaseRequestController {
         return ResponseEntity.ok(purchaseRequestService.list(storeId, storeName, storeCode, status, from, to, page, size));
     }
 
-    @Operation(summary = "발주요청 승인(=발주 자동 생성)", description = "HQ_ADMIN이 요청을 승인하고 PurchaseOrder를 생성합니다.")
+    @Operation(summary = "Create purchase order draft")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseOrderResponse.class)))
-    @PostMapping("/{purchaseRequestId}/approve")
-    public ResponseEntity<PurchaseOrderResponse> approve(
+    @PostMapping("/{purchaseRequestId}/draft-order")
+    public ResponseEntity<PurchaseOrderResponse> createDraftOrder(
             @PathVariable Long purchaseRequestId,
-            @Valid @RequestBody PurchaseRequestApproveRequest request
+            @Valid @RequestBody PurchaseRequestApproveRequest request,
+            @AuthenticationPrincipal User actor
     ) {
-        PurchaseOrder po = purchaseRequestService.approve(purchaseRequestId, request);
+        PurchaseOrder po = purchaseRequestService.createDraftOrder(purchaseRequestId, request, actor);
         return ResponseEntity.ok(PurchaseOrderResponse.from(po));
     }
 
-    @Operation(summary = "발주요청 반려")
+    @Operation(summary = "Get purchase order draft")
+    @ApiResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = PurchaseOrderResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Draft not found")
+    @GetMapping("/{purchaseRequestId}/draft-order")
+    public ResponseEntity<PurchaseOrderResponse> getDraftOrder(@PathVariable Long purchaseRequestId) {
+        return purchaseRequestService.getDraftOrder(purchaseRequestId)
+                .map(po -> ResponseEntity.ok(PurchaseOrderResponse.from(po)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Approve purchase request")
+    @ApiResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = PurchaseOrderResponse.class)))
+    @PostMapping("/{purchaseRequestId}/approve")
+    public ResponseEntity<PurchaseOrderResponse> approve(@PathVariable Long purchaseRequestId) {
+        PurchaseOrder po = purchaseRequestService.approve(purchaseRequestId);
+        return ResponseEntity.ok(PurchaseOrderResponse.from(po));
+    }
+
+    @Operation(summary = "Reject purchase request")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseRequestResponse.class)))
     @PostMapping("/{purchaseRequestId}/reject")

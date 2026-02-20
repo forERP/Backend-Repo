@@ -1,7 +1,16 @@
 package com.forerp.erp.warehouse.domain;
 
 import com.forerp.erp.store.domain.Store;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,14 +40,14 @@ public class Warehouse {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    // 창고 코드 (지점 내 유니크) : MAIN, SUB, COLD, BACKROOM 등
     @Column(nullable = false, length = 20)
     private String code;
 
     @Column(nullable = false, length = 50)
     private String name;
 
-    // 위치 정보 없어도 되나
+    @Column(name = "address", length = 255)
+    private String address;
 
     @Column(nullable = false)
     private boolean active;
@@ -46,11 +55,11 @@ public class Warehouse {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    /* ===== 생성 로직 ===== */
     public static Warehouse create(
             Store store,
             String code,
-            String name
+            String name,
+            String address
     ) {
         if (code == null || code.isBlank()) {
             throw new IllegalArgumentException("창고 코드는 필수입니다.");
@@ -63,13 +72,13 @@ public class Warehouse {
         warehouse.store = store;
         warehouse.code = code.trim().toUpperCase();
         warehouse.name = name.trim();
+        warehouse.address = normalize(address);
         warehouse.active = true;
         warehouse.createdAt = LocalDateTime.now();
 
         return warehouse;
     }
 
-    /* ===== 상태 제어 ===== */
     public void deactivate() {
         this.active = false;
     }
@@ -78,15 +87,26 @@ public class Warehouse {
         this.active = true;
     }
 
-    public void updateInfo(String code, String name, Boolean active) {
+    public void updateInfo(String code, String name, String address, Boolean active) {
         if (code != null && !code.isBlank()) {
             this.code = code.trim().toUpperCase();
         }
         if (name != null && !name.isBlank()) {
             this.name = name.trim();
         }
+        if (address != null) {
+            this.address = normalize(address);
+        }
         if (active != null) {
             this.active = active;
         }
+    }
+
+    private static String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

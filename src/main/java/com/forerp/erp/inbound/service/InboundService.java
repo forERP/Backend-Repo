@@ -11,6 +11,7 @@ import com.forerp.erp.inbound.service.support.InboundLoader;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
 import com.forerp.erp.purchase_order.repository.PurchaseOrderRepository;
+import com.forerp.erp.realtime.service.RealtimeEventService;
 import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.shipment.domain.ShipmentStatus;
 import com.forerp.erp.user.domain.User;
@@ -31,6 +32,7 @@ public class InboundService {
     private final InboundRepository inboundRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final RealtimeEventService realtimeEventService;
 
     private final InboundLoader loader;
     private final InboundBuilder builder;
@@ -67,6 +69,7 @@ public class InboundService {
         // 발주 닫기
         inbound.getPurchaseOrder().markReceived();
         purchaseOrderRepository.save(inbound.getPurchaseOrder());
+        realtimeEventService.publishInventoryChanged(inbound.getStore().getId(), "inbound_confirmed");
 
         return inbound;
     }
@@ -115,6 +118,7 @@ public class InboundService {
                 .map(i -> new InboundListResponse.InboundListItem(
                         i.getId(),
                         i.getPurchaseOrder() == null ? null : i.getPurchaseOrder().getId(),
+                        i.getPurchaseOrder() == null ? null : i.getPurchaseOrder().getCreatedAt(),
                         i.getStore().getId(),
                         i.getStore().getName(),
                         i.getStore().getStoreCode(),

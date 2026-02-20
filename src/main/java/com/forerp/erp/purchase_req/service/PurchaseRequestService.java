@@ -2,7 +2,7 @@ package com.forerp.erp.purchase_req.service;
 
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.purchase_order.domain.PurchaseOrder;
-import com.forerp.erp.purchase_order.dto.PurchaseOrderResponse;
+import com.forerp.erp.purchase_order.domain.PurchaseOrderStatus;
 import com.forerp.erp.purchase_order.repository.PurchaseOrderRepository;
 import com.forerp.erp.purchase_order.service.support.PurchaseOrderBuilder;
 import com.forerp.erp.purchase_req.domain.PurchaseRequest;
@@ -10,7 +10,6 @@ import com.forerp.erp.purchase_req.domain.PurchaseRequestStatus;
 import com.forerp.erp.purchase_req.dto.PurchaseRequestApproveRequest;
 import com.forerp.erp.purchase_req.dto.PurchaseRequestCreateRequest;
 import com.forerp.erp.purchase_req.dto.PurchaseRequestListResponse;
-import com.forerp.erp.purchase_req.dto.PurchaseRequestResponse;
 import com.forerp.erp.purchase_req.repository.PurchaseRequestRepository;
 import com.forerp.erp.purchase_req.service.support.PurchaseRequestBuilder;
 import com.forerp.erp.purchase_req.service.support.PurchaseRequestLoader;
@@ -26,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,19 +39,16 @@ public class PurchaseRequestService {
     private final PurchaseRequestBuilder prBuilder;
     private final PurchaseOrderBuilder poBuilder;
 
-    /* 발주요청 생성 */
     public PurchaseRequest create(PurchaseRequestCreateRequest req, User actor) {
         PurchaseRequest pr = prBuilder.buildCreateAggregate(req, actor);
         return purchaseRequestRepository.save(pr);
     }
 
-    /* 발주요청 단건 조회 */
     @Transactional(readOnly = true)
     public PurchaseRequest get(Long id) {
         return loader.loadPurchaseRequest(id);
     }
 
-    /* 발주요청 목록 */
     @Transactional(readOnly = true)
     public PurchaseRequestListResponse list(
             Long storeId,
@@ -99,6 +96,81 @@ public class PurchaseRequestService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public Optional<PurchaseOrder> getDraftOrder(Long purchaseRequestId) {
+        return purchaseOrderRepository.findByPurchaseRequest_Id(purchaseRequestId);
+    }
+
+    public PurchaseOrder createDraftOrder(Long purchaseRequestId, PurchaseRequestApproveRequest req, User actor) {
+        PurchaseRequest pr = loader.loadPurchaseRequest(purchaseRequestId);
+
+        if (pr.getStatus() != PurchaseRequestStatus.REQUESTED) {
+            throw new IllegalStateException("요청 상태가 REQUESTED가 아닙니다.");
+        }
+
+        if (purchaseOrderRepository.findByPurchaseRequest_Id(purchaseRequestId).isPresent()) {
+            throw new IllegalStateException("이미 발주서가 작성되어 있습니다.");
+        }
+
+        Supplier supplier = loader.loadSupplier(req.getSupplierId());
+        Warehouse warehouse = loader.loadWarehouse(req.getWarehouseId());
+        Store store = pr.getStore();
+        String receiverName = normalizeReceiverName(req.getReceiverName(), pr);
+        String receiverPhone = normalizeOrDefault(req.getReceiverPhone(), pr.getRequestedBy() == null ? null : pr.getRequestedBy().getPhoneNumber());
+        String shippingAddress = normalizeOrDefault(req.getShippingAddress(), warehouse.getAddress());
+        String paymentTerms = normalizeOrDefault(req.getPaymentTerms(), "월말정산");
+        String memo = normalizeOrDefault(req.getMemo(), pr.getMemo());
+
+        PurchaseOrder po = poBuilder.buildFromApprovedRequest(
+                pr,
+                supplier,
+                store,
+                warehouse,
+                actor,
+                req.getDeliveryDueDate(),
+                receiverName,
+                receiverPhone,
+                shippingAddress,
+                paymentTerms,
+                memo
+        );
+
+        return purchaseOrderRepository.save(po);
+    }
+
+    public PurchaseOrder approve(Long purchaseRequestId) {
+        PurchaseRequest pr = loader.loadPurchaseRequest(purchaseRequestId);
+
+        if (pr.getStatus() != PurchaseRequestStatus.REQUESTED) {
+            throw new IllegalStateException("요청 상태가 REQUESTED가 아닙니다.");
+        }
+
+        PurchaseOrder po = purchaseOrderRepository.findByPurchaseRequest_Id(purchaseRequestId)
+                .orElseThrow(() -> new IllegalStateException("발주서를 먼저 작성해주세요."));
+
+        if (po.getStatus() != PurchaseOrderStatus.CREATED) {
+            throw new IllegalStateException("작성 단계의 발주서가 아닙니다.");
+        }
+
+        pr.approve();
+        return po;
+    }
+
+    public PurchaseRequest reject(Long purchaseRequestId) {
+        PurchaseRequest pr = loader.loadPurchaseRequest(purchaseRequestId);
+
+        purchaseOrderRepository.findByPurchaseRequest_Id(purchaseRequestId)
+                .ifPresent(po -> {
+                    if (po.getStatus() != PurchaseOrderStatus.CREATED) {
+                        throw new IllegalStateException("이미 처리 중인 발주가 있어 반려할 수 없습니다.");
+                    }
+                    purchaseOrderRepository.delete(po);
+                });
+
+        pr.reject();
+        return pr;
+    }
+
     private String normalize(String value) {
         if (value == null) {
             return null;
@@ -107,38 +179,21 @@ public class PurchaseRequestService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    /* 발주요청 승인 = 발주 생성 */
-    public PurchaseOrder approve(Long purchaseRequestId, PurchaseRequestApproveRequest req) {
-        PurchaseRequest pr = loader.loadPurchaseRequest(purchaseRequestId);
-
-        // 중복 발주 생성 방지
-        if (purchaseOrderRepository.existsByPurchaseRequest_Id(purchaseRequestId)) {
-            throw new IllegalStateException("이미 발주가 생성된 요청입니다.");
-        }
-
-        pr.approve();
-
-        Supplier supplier = loader.loadSupplier(req.getSupplierId());
-        Warehouse warehouse = loader.loadWarehouse(req.getWarehouseId());
-        Store store = pr.getStore();
-
-        PurchaseOrder po = poBuilder.buildFromApprovedRequest(
-                pr,
-                supplier,
-                store,
-                warehouse,
-                req.getMemo()
-        );
-
-        // 승인된 PR은 같은 트랜잭션에서 자동 dirty-check 반영
-        purchaseOrderRepository.save(po);
-        return po;
+    private String normalizeOrDefault(String value, String defaultValue) {
+        String normalized = normalize(value);
+        return normalized == null ? defaultValue : normalized;
     }
 
-    /* 발주요청 반려 */
-    public PurchaseRequest reject(Long purchaseRequestId) {
-        PurchaseRequest pr = loader.loadPurchaseRequest(purchaseRequestId);
-        pr.reject();
-        return pr;
+    private String normalizeReceiverName(String receiverName, PurchaseRequest request) {
+        String normalized = normalize(receiverName);
+        if (normalized != null) {
+            return normalized;
+        }
+
+        String requesterName = request.getRequestedBy() == null ? null : normalize(request.getRequestedBy().getName());
+        if (requesterName != null) {
+            return requesterName;
+        }
+        return request.getStore() == null ? null : normalize(request.getStore().getName());
     }
 }

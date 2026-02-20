@@ -20,6 +20,9 @@ public class OrderResponse {
     private Long storeId;
     private String storeName;
     private String storeCode;
+    private Long warehouseId;
+    private String warehouseCode;
+    private String warehouseName;
     private String status;
     private BigDecimal totalAmount;
     private LocalDateTime orderedAt;
@@ -31,6 +34,7 @@ public class OrderResponse {
     public static class OrderItemResponse {
         private Long orderItemId;
         private Long productId;
+        private String productName;
         private int qty;
         private BigDecimal unitPrice;
         private BigDecimal amount;
@@ -39,6 +43,7 @@ public class OrderResponse {
             return new OrderItemResponse(
                     i.getId(),
                     i.getProduct().getId(),
+                    i.getProduct().getName(),
                     i.getQuantity(),
                     i.getUnitPrice(),
                     i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity()))
@@ -52,6 +57,9 @@ public class OrderResponse {
                 o.getStore().getId(),
                 o.getStore().getName(),
                 o.getStore().getStoreCode(),
+                o.getWarehouse().getId(),
+                o.getWarehouse().getCode(),
+                o.getWarehouse().getName(),
                 o.getStatus().name(),
                 o.getTotalAmount(),
                 o.getOrderedAt(),

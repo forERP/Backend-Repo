@@ -49,4 +49,17 @@ public class OrderItem {
     BigDecimal calculateAmount() {
         return unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
+
+    public BigDecimal reduceQuantity(int qtyToCancel) {
+        if (qtyToCancel <= 0) {
+            throw new IllegalArgumentException("취소 수량은 1 이상이어야 합니다.");
+        }
+        if (qtyToCancel > this.quantity) {
+            throw new IllegalArgumentException("취소 수량이 주문 수량을 초과했습니다.");
+        }
+
+        BigDecimal canceledAmount = this.unitPrice.multiply(BigDecimal.valueOf(qtyToCancel));
+        this.quantity -= qtyToCancel;
+        return canceledAmount;
+    }
 }

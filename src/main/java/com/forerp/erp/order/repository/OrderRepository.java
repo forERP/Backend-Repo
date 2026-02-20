@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    @EntityGraph(attributePaths = {"store", "items", "items.product"})
+    @EntityGraph(attributePaths = {"store", "warehouse", "items", "items.product"})
     @Query("""
         select o from Order o
         where (:storeId is null or o.store.id = :storeId)
@@ -34,7 +34,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"store", "items", "items.product"})
+    @EntityGraph(attributePaths = {"store", "warehouse", "items", "items.product"})
     @Query("select o from Order o where o.id = :id")
     Optional<Order> findDetailById(@Param("id") Long id);
 }

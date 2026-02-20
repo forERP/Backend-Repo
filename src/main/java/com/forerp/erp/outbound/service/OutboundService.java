@@ -10,6 +10,7 @@ import com.forerp.erp.outbound.dto.OutboundListResponse;
 import com.forerp.erp.outbound.repository.OutboundRepository;
 import com.forerp.erp.outbound.service.support.OutboundBuilder;
 import com.forerp.erp.outbound.service.support.OutboundLoader;
+import com.forerp.erp.realtime.service.RealtimeEventService;
 import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.shipment.domain.ShipmentStatus;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
@@ -31,6 +32,7 @@ public class OutboundService {
 
     private final OutboundRepository outboundRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
+    private final RealtimeEventService realtimeEventService;
 
     private final OutboundLoader loader;
     private final OutboundBuilder builder;
@@ -41,7 +43,9 @@ public class OutboundService {
 
         outbound.getOrder().markPrepared();
 
-        return outboundRepository.save(outbound);
+        Outbound saved = outboundRepository.save(outbound);
+        realtimeEventService.publishOrderChanged(saved.getStore().getId(), saved.getOrder().getId(), "outbound_created");
+        return saved;
     }
 
     /* 배송 출발 + 재고 차감 + 출고 확정 */
@@ -58,6 +62,8 @@ public class OutboundService {
 
         outbound.confirm();
         outbound.getOrder().markShipped();
+        realtimeEventService.publishInventoryChanged(outbound.getStore().getId(), "outbound_confirmed");
+        realtimeEventService.publishOrderChanged(outbound.getStore().getId(), outbound.getOrder().getId(), "order_shipped");
 
         return outbound;
     }
@@ -66,7 +72,7 @@ public class OutboundService {
     public Outbound arriveOutbound(Long outboundId) {
         Outbound outbound = loader.loadOutbound(outboundId);
         Shipment shipment = loader.requireShipment(outbound);
-        loader.requireOutboundStatus(outbound, outbound.getStatus());
+        loader.requireOutboundStatus(outbound, OutboundStatus.CONFIRMED);
 
         // 배송 도착 (SHIPPING -> ARRIVED)
         shipment.arrive();
@@ -74,6 +80,7 @@ public class OutboundService {
         outbound.getOrder().markArrived();
         // 출고 도착 (CONFIRMED -> ARRIVED)
         outbound.arrive();
+        realtimeEventService.publishOrderChanged(outbound.getStore().getId(), outbound.getOrder().getId(), "order_arrived");
 
         return outbound;
     }
@@ -88,6 +95,7 @@ public class OutboundService {
         }
 
         outbound.cancel();
+        realtimeEventService.publishOrderChanged(outbound.getStore().getId(), outbound.getOrder().getId(), "outbound_canceled");
         return outbound;
     }
 

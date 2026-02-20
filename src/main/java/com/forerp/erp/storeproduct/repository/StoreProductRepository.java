@@ -65,6 +65,14 @@ public interface StoreProductRepository extends JpaRepository<StoreProduct, Long
             List<Long> productIds
     );
 
+    @EntityGraph(attributePaths = {"warehouse", "product"})
+    List<StoreProduct> findByStore_IdAndWarehouse_IdInAndProduct_IdInAndProduct_Status(
+            Long storeId,
+            List<Long> warehouseIds,
+            List<Long> productIds,
+            ProductStatus status
+    );
+
     @EntityGraph(attributePaths = {"store", "warehouse", "product"})
     Optional<StoreProduct> findByStore_IdAndWarehouse_IdAndProduct_IdAndProduct_Status(
             Long storeId, Long warehouseId, Long productId, ProductStatus status

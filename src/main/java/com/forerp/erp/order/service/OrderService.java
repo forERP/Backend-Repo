@@ -84,6 +84,9 @@ public class OrderService {
                         o.getStore().getId(),
                         o.getStore().getName(),
                         o.getStore().getStoreCode(),
+                        o.getWarehouse().getId(),
+                        o.getWarehouse().getCode(),
+                        o.getWarehouse().getName(),
                         o.getStatus().name(),
                         o.getTotalAmount(),
                         o.getOrderedAt()

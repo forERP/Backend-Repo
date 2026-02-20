@@ -28,6 +28,9 @@ public class OrderListResponse {
         private Long storeId;
         private String storeName;
         private String storeCode;
+        private Long warehouseId;
+        private String warehouseCode;
+        private String warehouseName;
         private String status;
         private BigDecimal totalAmount;
         private LocalDateTime orderedAt;

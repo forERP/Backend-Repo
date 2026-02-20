@@ -3,6 +3,7 @@ package com.forerp.erp.inventory.service;
 import com.forerp.erp.inventory.dto.InventoryResponse;
 import com.forerp.erp.inventory.dto.InventoryUpdateRequest;
 import com.forerp.erp.product.domain.ProductStatus;
+import com.forerp.erp.realtime.service.RealtimeEventService;
 import com.forerp.erp.storeproduct.domain.SaleStatus;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.storeproduct.repository.StoreProductRepository;
@@ -16,6 +17,7 @@ public class InventoryCommandService {
 
     private final StoreProductRepository storeProductRepository;
     private final InventoryQueryService inventoryQueryService;
+    private final RealtimeEventService realtimeEventService;
 
     @Transactional
     public InventoryResponse updateSaleStatus(Long storeProductId, SaleStatus saleStatus) {
@@ -26,6 +28,7 @@ public class InventoryCommandService {
         StoreProduct storeProduct = findActiveStoreProduct(storeProductId);
         storeProduct.changeSaleStatus(saleStatus);
         storeProductRepository.flush();
+        realtimeEventService.publishInventoryChanged(storeProduct.getStore().getId(), "sale_status_updated");
 
         return inventoryQueryService.toResponse(storeProduct);
     }
@@ -51,6 +54,7 @@ public class InventoryCommandService {
         }
 
         storeProductRepository.flush();
+        realtimeEventService.publishInventoryChanged(storeProduct.getStore().getId(), "inventory_metadata_updated");
         return inventoryQueryService.toResponse(storeProduct);
     }
 

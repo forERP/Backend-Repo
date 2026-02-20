@@ -26,7 +26,7 @@ public class OrderBuilder {
                 .map(i -> buildOrderItem(store.getId(), warehouse.getId(), i))
                 .toList();
 
-        return Order.create(store, items);
+        return Order.create(store, warehouse, items);
     }
 
     private OrderItem buildOrderItem(Long storeId, Long warehouseId, OrderCreateRequest.OrderCreateItem i) {

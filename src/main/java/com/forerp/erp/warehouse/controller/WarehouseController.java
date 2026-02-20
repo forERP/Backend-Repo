@@ -85,7 +85,7 @@ public class WarehouseController {
                 var store = storeRepository.findById(request.getStoreId())
                                 .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다: " + request.getStoreId()));
 
-                Warehouse warehouse = Warehouse.create(store, request.getCode(), request.getName());
+                Warehouse warehouse = Warehouse.create(store, request.getCode(), request.getName(), request.getAddress());
                 Warehouse saved = warehouseRepository.save(warehouse);
                 storeProductSyncService.syncActiveProductsToWarehouse(saved);
                 return ResponseEntity.ok(WarehouseResponseDto.from(saved));
@@ -98,7 +98,7 @@ public class WarehouseController {
                 Warehouse warehouse = warehouseRepository.findById(warehouseId)
                                 .orElseThrow(() -> new IllegalArgumentException("창고를 찾을 수 없습니다: " + warehouseId));
 
-                warehouse.updateInfo(request.getCode(), request.getName(), request.getActive());
+                warehouse.updateInfo(request.getCode(), request.getName(), request.getAddress(), request.getActive());
                 Warehouse saved = warehouseRepository.save(warehouse);
                 return ResponseEntity.ok(WarehouseResponseDto.from(saved));
         }

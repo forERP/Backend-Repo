@@ -11,5 +11,6 @@ public class WarehouseUpdateRequestDto {
     // allow partial updates: code, name, active
     private String code;
     private String name;
+    private String address;
     private Boolean active;
 }

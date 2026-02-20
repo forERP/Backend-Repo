@@ -14,6 +14,7 @@ public class WarehouseResponseDto {
     private Long warehouseId;
     private String code;
     private String name;
+    private String address;
     private Long storeId;
     private String storeName;
     private boolean active;
@@ -24,6 +25,7 @@ public class WarehouseResponseDto {
                 warehouse.getId(),
                 warehouse.getCode(),
                 warehouse.getName(),
+                warehouse.getAddress(),
                 warehouse.getStore().getId(),
                 warehouse.getStore().getName(),
                 warehouse.isActive()

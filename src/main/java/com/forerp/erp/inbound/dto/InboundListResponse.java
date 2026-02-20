@@ -27,6 +27,7 @@ public class InboundListResponse {
     public static class InboundListItem {
         private Long inboundId;
         private Long purchaseOrderId;
+        private LocalDateTime purchaseOrderCreatedAt;
         private Long storeId;
         private String storeName;
         private String storeCode;

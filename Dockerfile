@@ -24,8 +24,8 @@ ENV TZ=Asia/Seoul
 # 빌드 스테이지에서 생성한 JAR 복사
 COPY --from=builder /app/target/*.jar app.jar
 
-# 외부에서 매핑할 기본 포트 (application.yaml의 server.port=8081과 맞춤)
-EXPOSE 8081
+# 외부에서 매핑할 기본 포트 (application.yaml의 server.port=8089와 맞춤)
+EXPOSE 8089
 
 # 프로파일, JVM 옵션 등을 외부에서 주입할 수 있도록 ENV 정의 (선택)
 ENV SPRING_PROFILES_ACTIVE=prod

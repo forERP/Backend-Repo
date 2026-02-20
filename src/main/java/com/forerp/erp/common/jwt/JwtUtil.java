@@ -19,7 +19,6 @@ public class JwtUtil {
 
     private SecretKey key;
     private Date serverStartedAt;
-
     private static final long TOKEN_VALIDITY_MS = 24 * 60 * 60 * 1000L;
 
     @PostConstruct
@@ -71,6 +70,11 @@ public class JwtUtil {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        }
+
+        String queryToken = request.getParameter("access_token");
+        if (queryToken != null && !queryToken.isBlank()) {
+            return queryToken.trim();
         }
         return null;
     }

@@ -121,33 +121,74 @@ class LocalSampleDataSeeder {
                 "https://images.pexels.com/photos/10902848/pexels-photo-10902848.jpeg"
         );
 
-        Store sogang = ensureStore("001", "서강대점");
-        Store hongdae = ensureStore("002", "홍대점");
+        Store headquarters = ensureStore(
+                "000",
+                "본사",
+                StoreType.HQ,
+                "02-6000-0000",
+                "서울특별시 중구 세종대로 110"
+        );
+        Store sogang = ensureStore(
+                "001",
+                "서강대점",
+                StoreType.STORE,
+                "02-3000-1001",
+                "서울특별시 마포구 백범로 35"
+        );
+        Store hongdae = ensureStore(
+                "002",
+                "홍대점",
+                StoreType.STORE,
+                "02-3000-1002",
+                "서울특별시 마포구 와우산로 94"
+        );
 
-        Warehouse sub001 = ensureWarehouse(sogang, "SUB_001");
-        Warehouse sub002 = ensureWarehouse(sogang, "SUB_002");
-        Warehouse sub003 = ensureWarehouse(hongdae, "SUB_003");
-        Warehouse sub004 = ensureWarehouse(hongdae, "SUB_004");
+        Warehouse sub001 = ensureWarehouse(
+                sogang,
+                "SUB_001",
+                "SUB_001",
+                "서울특별시 마포구 백범로 37"
+        );
+        Warehouse sub002 = ensureWarehouse(
+                sogang,
+                "SUB_002",
+                "SUB_002",
+                "서울특별시 마포구 백범로 39"
+        );
+        Warehouse sub003 = ensureWarehouse(
+                hongdae,
+                "SUB_003",
+                "SUB_003",
+                "서울특별시 마포구 와우산로 96"
+        );
+        Warehouse sub004 = ensureWarehouse(
+                hongdae,
+                "SUB_004",
+                "SUB_004",
+                "서울특별시 마포구 와우산로 98"
+        );
 
-        ensureUser("sg-manager-kim", "0001", "김서강", "010-1111-2222", sogang, UserRole.STORE_ADMIN);
-        ensureUser("sg-manager-park", "0002", "박서강", "010-1111-3333", sogang, UserRole.STORE_ADMIN);
-        ensureUser("sg-hall-choi", "0003", "최서강", "010-1111-4444", sogang, UserRole.STORE_HALL_STAFF);
-        ensureUser("sg-kitchen-lee", "0004", "이서강", "010-1111-5555", sogang, UserRole.STORE_KITCHEN_STAFF);
-        ensureUser("hd-manager-kim", "0005", "김홍대", "010-2222-3333", hongdae, UserRole.STORE_ADMIN);
+        ensureUser("hq-admin-choi", "0001", "최본사", "010-0000-0001", headquarters, UserRole.HQ_ADMIN);
+
+        ensureUser("sg-manager-kim", "1029", "김서강", "010-1111-2222", sogang, UserRole.STORE_ADMIN);
+        ensureUser("sg-manager-park", "1928", "박서강", "010-1111-3333", sogang, UserRole.STORE_ADMIN);
+        ensureUser("sg-hall-choi", "1119", "최서강", "010-1111-4444", sogang, UserRole.STORE_HALL_STAFF);
+        ensureUser("sg-kitchen-lee", "1118", "이서강", "010-1111-5555", sogang, UserRole.STORE_KITCHEN_STAFF);
+        ensureUser("hd-manager-kim", "2345", "김홍대", "010-2222-3333", hongdae, UserRole.STORE_ADMIN);
 
         ensureSupplier(
                 "한빛푸드",
                 "한도윤",
                 "010-3333-4444",
                 "sales@hanbitfood.co.kr",
-                "서울 마포구 월드컵북로 21"
+                "서울특별시 마포구 월드컵북로 21"
         );
         ensureSupplier(
                 "오션비버리지",
-                "오세림",
+                "오세리",
                 "010-5555-6666",
                 "biz@oceanbev.co.kr",
-                "서울 서대문구 연세로 42"
+                "서울특별시 서대문구 연세로 42"
         );
 
         List.of(sub001, sub002, sub003, sub004)
@@ -185,26 +226,42 @@ class LocalSampleDataSeeder {
                 ));
     }
 
-    private Store ensureStore(String storeCode, String storeName) {
+    private Store ensureStore(
+            String storeCode,
+            String storeName,
+            StoreType storeType,
+            String phone,
+            String address
+    ) {
         return storeRepository.findAll().stream()
                 .filter(store -> storeCode.equals(store.getStoreCode()))
                 .findFirst()
+                .map(existing -> {
+                    existing.updateInfo(storeName, phone, address);
+                    return existing;
+                })
                 .orElseGet(() -> storeRepository.save(
                         Store.builder()
                                 .storeCode(storeCode)
                                 .name(storeName)
-                                .storeType(StoreType.STORE)
+                                .storeType(storeType)
                                 .status(StoreStatus.OPEN)
+                                .phone(phone)
+                                .address(address)
                                 .build()
                 ));
     }
 
-    private Warehouse ensureWarehouse(Store store, String code) {
+    private Warehouse ensureWarehouse(Store store, String code, String name, String address) {
         return warehouseRepository.findByStore_Id(store.getId()).stream()
                 .filter(warehouse -> code.equalsIgnoreCase(warehouse.getCode()))
                 .findFirst()
+                .map(existing -> {
+                    existing.updateInfo(code, name, address, true);
+                    return existing;
+                })
                 .orElseGet(() -> warehouseRepository.save(
-                        Warehouse.create(store, code, code)
+                        Warehouse.create(store, code, name, address)
                 ));
     }
 
@@ -217,6 +274,10 @@ class LocalSampleDataSeeder {
             UserRole role
     ) {
         return userRepository.findByLoginId(loginId)
+                .map(existing -> {
+                    existing.updateInfo(name, phoneNumber, null, store, role, null);
+                    return existing;
+                })
                 .orElseGet(() -> userRepository.save(
                         User.builder()
                                 .loginId(loginId)

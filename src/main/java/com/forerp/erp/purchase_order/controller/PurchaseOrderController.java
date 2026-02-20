@@ -1,6 +1,7 @@
 package com.forerp.erp.purchase_order.controller;
 
 import com.forerp.erp.purchase_order.domain.PurchaseOrder;
+import com.forerp.erp.purchase_order.dto.PurchaseOrderDraftUpdateRequest;
 import com.forerp.erp.purchase_order.dto.PurchaseOrderListResponse;
 import com.forerp.erp.purchase_order.dto.PurchaseOrderResponse;
 import com.forerp.erp.purchase_order.service.PurchaseOrderService;
@@ -9,11 +10,23 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "PurchaseOrder", description = "발주(본사→거래처) API (관리자)")
+@Tag(name = "PurchaseOrder", description = "발주 API (관리자)")
 @RestController
 @RequestMapping("/api/purchase-orders")
 public class PurchaseOrderController {
@@ -67,7 +80,7 @@ public class PurchaseOrderController {
         );
     }
 
-    @Operation(summary = "발주 확정(ORDERED)", description = "PurchaseOrder.CREATED -> ORDERED")
+    @Operation(summary = "발주 확정(ORDERED)")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseOrderResponse.class)))
     @PostMapping("/{purchaseOrderId}/order")
@@ -76,7 +89,47 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(PurchaseOrderResponse.from(po));
     }
 
-    @Operation(summary = "발주 취소(CANCELLED)", description = "ORDERED 전까지만 취소 가능")
+    @Operation(summary = "작성 단계 발주서 수정")
+    @ApiResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = PurchaseOrderResponse.class)))
+    @PutMapping("/{purchaseOrderId}/draft")
+    public ResponseEntity<PurchaseOrderResponse> updateDraft(
+            @PathVariable Long purchaseOrderId,
+            @Valid @RequestBody PurchaseOrderDraftUpdateRequest request
+    ) {
+        PurchaseOrder po = purchaseOrderService.updateDraft(purchaseOrderId, request);
+        return ResponseEntity.ok(PurchaseOrderResponse.from(po));
+    }
+
+    @Operation(summary = "작성 단계 발주서 삭제")
+    @ApiResponse(responseCode = "204", description = "No Content")
+    @DeleteMapping("/{purchaseOrderId}/draft")
+    public ResponseEntity<Void> deleteDraft(@PathVariable Long purchaseOrderId) {
+        purchaseOrderService.deleteDraft(purchaseOrderId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "발주서 엑셀 다운로드")
+    @ApiResponse(responseCode = "200", description = "OK")
+    @GetMapping("/{purchaseOrderId}/document")
+    public ResponseEntity<byte[]> downloadDocument(@PathVariable Long purchaseOrderId) {
+        byte[] file = purchaseOrderService.exportDocument(purchaseOrderId);
+        String filename = purchaseOrderService.buildDocumentDownloadFilename(purchaseOrderId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ));
+        headers.setContentDisposition(
+                ContentDisposition.attachment()
+                        .filename(filename)
+                        .build()
+        );
+
+        return ResponseEntity.ok().headers(headers).body(file);
+    }
+
+    @Operation(summary = "발주 취소(CANCELLED)")
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseOrderResponse.class)))
     @PostMapping("/{purchaseOrderId}/cancel")
