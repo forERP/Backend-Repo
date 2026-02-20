@@ -5,11 +5,9 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ProductCategoryResponseDto {
+public class ProductCategoryProductResponseDto {
 
-    private Long id;
-    private String code;
+    private Long productId;
+    private String sku;
     private String name;
-    private String description;
-    private String imageUrl;
 }

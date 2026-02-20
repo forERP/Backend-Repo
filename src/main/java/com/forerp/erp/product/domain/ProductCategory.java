@@ -31,6 +31,9 @@ public class ProductCategory {
     @Column(length = 255)
     private String description;
 
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -46,5 +49,12 @@ public class ProductCategory {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void update(String code, String name, String description, String imageUrl) {
+        this.code = code;
+        this.name = name;
+        this.description = description;
+        this.imageUrl = imageUrl;
     }
 }

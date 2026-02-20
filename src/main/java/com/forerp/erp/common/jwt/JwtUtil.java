@@ -18,12 +18,14 @@ public class JwtUtil {
     private String secretKey;
 
     private SecretKey key;
+    private Date serverStartedAt;
 
     private static final long TOKEN_VALIDITY_MS = 24 * 60 * 60 * 1000L;
 
     @PostConstruct
     public void init() {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+        this.serverStartedAt = new Date();
     }
 
     public String generateToken(String loginId) {
@@ -40,8 +42,19 @@ public class JwtUtil {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-            return true;
+            Date issuedAt = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getIssuedAt();
+
+            if (issuedAt == null) {
+                return false;
+            }
+
+            // Re-login is required after backend restart.
+            return !issuedAt.before(serverStartedAt);
         } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
             return false;
         }

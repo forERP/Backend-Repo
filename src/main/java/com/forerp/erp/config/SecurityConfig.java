@@ -1,6 +1,7 @@
 package com.forerp.erp.config;
 
 import com.forerp.erp.common.jwt.JwtSecurityFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,7 @@ public class SecurityConfig {
     private final JwtSecurityFilter jwtSecurityFilter;
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
@@ -36,12 +37,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:3100",     // backoffice-web (개발-도커)
-                "http://localhost:5173",     // backoffice-web (개발-로컬)
-                "http://localhost:3200",     // store-web (개발-도커)
-                "http://localhost:5174",     // store-web (개발-로컬)
-                "http://backoffice-web",     // NginX 컨테이너명
-                "http://store-web"           // NginX 컨테이너명
+                "http://localhost:3100",
+                "http://localhost:5173",
+                "http://localhost:3200",
+                "http://localhost:5174",
+                "http://backoffice-web",
+                "http://store-web"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -57,17 +58,21 @@ public class SecurityConfig {
     @Bean
     @Order(0)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource())); // CORS 활성화
-        http.csrf(AbstractHttpConfigurer::disable); // csrf 보호 비활성화(토큰 방식을 사용하므로)
-        http.formLogin(AbstractHttpConfigurer::disable); // 기본 로그인 폼 및 HTTP basic 인증 비활성화(우리가 만든 로그인 API 사용)
-        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // 세션 관리 정책을 STATELESS로 설정(서버가 사용자 상태를 저장하지 않음)
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+        http.csrf(AbstractHttpConfigurer::disable);
+        http.formLogin(AbstractHttpConfigurer::disable);
+        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) ->
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
+        );
 
-        // API 경로별 접근 권한 설정
         http.authorizeHttpRequests(auth -> auth
-                // OPTIONS 요청은 CORS preflight용으로 항상 허용
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // 로그인 API와 초기 사용자 설정 API는 토큰 없이도 접근 허용
-                .requestMatchers("/api/users/login/**",
+                .requestMatchers(
+                        "/api/users/login/**",
                         "/api/users/setup/**",
                         "/api/attendance/status",
                         "/api/attendance/clock-in",

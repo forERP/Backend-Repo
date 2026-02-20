@@ -12,6 +12,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     java.util.List<Product> findAllByStatus(ProductStatus status);
 
+    java.util.List<Product> findByCategory_IdOrderByNameAsc(Long categoryId);
+
     @Query("""
         select p from Product p
         where (:name is null or lower(p.name) like lower(concat('%', :name, '%')))
