@@ -20,6 +20,11 @@ public interface PurchaseRequestRepository extends JpaRepository<PurchaseRequest
     @Query("""
         select pr from PurchaseRequest pr
         where (:storeId is null or pr.store.id = :storeId)
+          and (
+              :storeKeyword is null
+              or lower(pr.store.name) like lower(concat('%', :storeKeyword, '%'))
+              or lower(pr.store.storeCode) like lower(concat('%', :storeKeyword, '%'))
+          )
           and (:storeName is null or lower(pr.store.name) like lower(concat('%', :storeName, '%')))
           and (:storeCode is null or lower(pr.store.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:status is null or pr.status = :status)
@@ -28,6 +33,7 @@ public interface PurchaseRequestRepository extends JpaRepository<PurchaseRequest
         """)
     Page<PurchaseRequest> search(
             @Param("storeId") Long storeId,
+            @Param("storeKeyword") String storeKeyword,
             @Param("storeName") String storeName,
             @Param("storeCode") String storeCode,
             @Param("status") PurchaseRequestStatus status,

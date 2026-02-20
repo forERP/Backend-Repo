@@ -73,25 +73,50 @@ public class DiscardService {
     @Transactional(readOnly = true)
     public DiscardListResponse list(
             Long storeId,
+            String storeKeyword,
+            String warehouseKeyword,
+            String productKeyword,
             Long warehouseId,
             String status,
             String from,
             String to,
+            String discardedFrom,
+            String discardedTo,
             int page,
             int size
     ) {
         DiscardStatus st = QueryParamParser.parseEnumOrNull(status, DiscardStatus.class, "status");
         LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
+        LocalDateTime discardedFromDt = QueryParamParser.parseFromDate(discardedFrom);
+        LocalDateTime discardedToDt = QueryParamParser.parseToDateExclusive(discardedTo);
 
         PageRequest pageable = PageRequest.of(page, size);
-        Page<Discard> result = discardRepository.search(storeId, warehouseId, st, fromDt, toDt, pageable);
+        Page<Discard> result = discardRepository.search(
+                storeId,
+                normalize(storeKeyword),
+                normalize(warehouseKeyword),
+                normalize(productKeyword),
+                warehouseId,
+                st,
+                fromDt,
+                toDt,
+                discardedFromDt,
+                discardedToDt,
+                pageable
+        );
 
         List<DiscardListResponse.DiscardListItem> content = result.getContent().stream()
                 .map(d -> new DiscardListResponse.DiscardListItem(
                         d.getId(),
                         d.getStore().getId(),
+                        d.getStore().getName(),
+                        d.getStore().getStoreCode(),
                         d.getWarehouse().getId(),
+                        d.getWarehouse().getName(),
+                        d.getWarehouse().getCode(),
+                        d.getCreatedBy() == null ? null : d.getCreatedBy().getId(),
+                        d.getCreatedBy() == null ? null : d.getCreatedBy().getName(),
                         d.getStatus().name(),
                         d.getReason(),
                         d.getCreatedAt(),
@@ -106,5 +131,13 @@ public class DiscardService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

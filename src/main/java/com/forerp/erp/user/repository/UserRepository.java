@@ -30,7 +30,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
         select u from User u
         left join u.store s
-        where (:storeName is null or lower(s.name) like lower(concat('%', :storeName, '%')))
+        where (
+              :storeKeyword is null
+              or lower(s.name) like lower(concat('%', :storeKeyword, '%'))
+              or lower(s.storeCode) like lower(concat('%', :storeKeyword, '%'))
+          )
+          and (:storeName is null or lower(s.name) like lower(concat('%', :storeName, '%')))
           and (:storeCode is null or lower(s.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:name is null or lower(u.name) like lower(concat('%', :name, '%')))
           and (:status is null or u.status = :status)
@@ -39,6 +44,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
           and (:createdTo is null or u.createdAt < :createdTo)
         """)
     Page<User> search(
+            @Param("storeKeyword") String storeKeyword,
             @Param("storeName") String storeName,
             @Param("storeCode") String storeCode,
             @Param("name") String name,

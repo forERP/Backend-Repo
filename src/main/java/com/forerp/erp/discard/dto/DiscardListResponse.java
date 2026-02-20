@@ -20,7 +20,13 @@ public class DiscardListResponse {
     public static class DiscardListItem {
         private Long discardId;
         private Long storeId;
+        private String storeName;
+        private String storeCode;
         private Long warehouseId;
+        private String warehouseName;
+        private String warehouseCode;
+        private Long createdByUserId;
+        private String createdByName;
         private String status;
         private String reason;
         private LocalDateTime createdAt;

@@ -52,6 +52,7 @@ public class PurchaseRequestService {
     @Transactional(readOnly = true)
     public PurchaseRequestListResponse list(
             Long storeId,
+            String storeKeyword,
             String storeName,
             String storeCode,
             String status,
@@ -67,6 +68,7 @@ public class PurchaseRequestService {
         PageRequest pageable = PageRequest.of(page, size);
         Page<PurchaseRequest> result = purchaseRequestRepository.search(
                 storeId,
+                normalize(storeKeyword),
                 normalize(storeName),
                 normalize(storeCode),
                 st,

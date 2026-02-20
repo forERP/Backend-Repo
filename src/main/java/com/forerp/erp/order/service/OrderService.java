@@ -55,6 +55,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderListResponse list(
             Long storeId,
+            String storeKeyword,
             String storeName,
             String storeCode,
             String status,
@@ -70,6 +71,7 @@ public class OrderService {
         PageRequest pageable = PageRequest.of(page, size);
         Page<Order> result = orderRepository.search(
                 storeId,
+                normalize(storeKeyword),
                 normalize(storeName),
                 normalize(storeCode),
                 st,

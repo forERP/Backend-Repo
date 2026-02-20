@@ -18,11 +18,17 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     @EntityGraph(attributePaths = {"store"})
     @Query("""
         select w from Warehouse w
-        where (:name is null or lower(w.name) like lower(concat('%', :name, '%')))
+        where (
+              :keyword is null
+              or lower(w.name) like lower(concat('%', :keyword, '%'))
+              or lower(w.code) like lower(concat('%', :keyword, '%'))
+          )
+          and (:name is null or lower(w.name) like lower(concat('%', :name, '%')))
           and (:code is null or lower(w.code) like lower(concat('%', :code, '%')))
           and (:active is null or w.active = :active)
         """)
     Page<Warehouse> search(
+            @Param("keyword") String keyword,
             @Param("name") String name,
             @Param("code") String code,
             @Param("active") Boolean active,

@@ -109,6 +109,7 @@ public class OutboundService {
     @Transactional(readOnly = true)
     public OutboundListResponse listOutbounds(
             Long storeId,
+            String storeKeyword,
             String storeName,
             String storeCode,
             Long warehouseId,
@@ -127,6 +128,7 @@ public class OutboundService {
         PageRequest pageable = PageRequest.of(page, size);
         Page<Outbound> result = outboundRepository.search(
                 storeId,
+                normalize(storeKeyword),
                 normalize(storeName),
                 normalize(storeCode),
                 st,

@@ -17,11 +17,17 @@ public interface StoreRepository  extends JpaRepository<Store, Long> {
 
     @Query("""
         select s from Store s
-        where (:name is null or lower(s.name) like lower(concat('%', :name, '%')))
+        where (
+              :keyword is null
+              or lower(s.name) like lower(concat('%', :keyword, '%'))
+              or lower(s.storeCode) like lower(concat('%', :keyword, '%'))
+          )
+          and (:name is null or lower(s.name) like lower(concat('%', :name, '%')))
           and (:code is null or lower(s.storeCode) like lower(concat('%', :code, '%')))
           and (:status is null or s.status = :status)
         """)
     Page<Store> search(
+            @Param("keyword") String keyword,
             @Param("name") String name,
             @Param("code") String code,
             @Param("status") StoreStatus status,

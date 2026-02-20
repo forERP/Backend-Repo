@@ -18,11 +18,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("""
         select p from Product p
-        where (:name is null or lower(p.name) like lower(concat('%', :name, '%')))
+        where (
+              :productKeyword is null
+              or lower(p.name) like lower(concat('%', :productKeyword, '%'))
+              or lower(p.sku) like lower(concat('%', :productKeyword, '%'))
+          )
+          and (:name is null or lower(p.name) like lower(concat('%', :name, '%')))
           and (:sku is null or lower(p.sku) like lower(concat('%', :sku, '%')))
           and (:status is null or p.status = :status)
         """)
     Page<Product> search(
+            @Param("productKeyword") String productKeyword,
             @Param("name") String name,
             @Param("sku") String sku,
             @Param("status") ProductStatus status,

@@ -47,6 +47,7 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<OrderListResponse> list(
             @RequestParam(required = false) Long storeId,
+            @RequestParam(required = false) String storeKeyword,
             @RequestParam(required = false) String storeName,
             @RequestParam(required = false) String storeCode,
             @RequestParam(required = false) String status,
@@ -55,7 +56,7 @@ public class OrderController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
-        return ResponseEntity.ok(orderService.list(storeId, storeName, storeCode, status, from, to, page, size));
+        return ResponseEntity.ok(orderService.list(storeId, storeKeyword, storeName, storeCode, status, from, to, page, size));
     }
 
     @Operation(summary = "주문 취소", description = "출고 생성 전까지만 취소 가능")

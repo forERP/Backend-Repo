@@ -89,6 +89,9 @@ public class OutboundController {
             @Parameter(description = "Store ID", example = "1")
             @RequestParam(required = false) Long storeId,
 
+            @Parameter(description = "Store keyword (name/code)", example = "S0001")
+            @RequestParam(required = false) String storeKeyword,
+
             @Parameter(description = "Store name", example = "Gangnam")
             @RequestParam(required = false) String storeName,
 
@@ -118,6 +121,7 @@ public class OutboundController {
     ) {
         return ResponseEntity.ok(outboundService.listOutbounds(
                 storeId,
+                storeKeyword,
                 storeName,
                 storeCode,
                 warehouseId,

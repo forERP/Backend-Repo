@@ -33,9 +33,15 @@ public class ProductCategoryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductCategoryResponseDto> searchCategories(String name, String code, int page, int size) {
+    public Page<ProductCategoryResponseDto> searchCategories(String keyword, String name, String code, String status, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        return categoryRepository.search(normalize(name), normalize(code), pageable)
+        return categoryRepository.search(
+                        normalize(keyword),
+                        normalize(name),
+                        normalize(code),
+                        parseActiveStatus(status),
+                        pageable
+                )
                 .map(this::toSimpleResponse);
     }
 
@@ -54,6 +60,7 @@ public class ProductCategoryService {
                 category.getName(),
                 category.getDescription(),
                 category.getImageUrl(),
+                category.isActive(),
                 category.getCreatedAt(),
                 category.getUpdatedAt(),
                 products
@@ -75,6 +82,7 @@ public class ProductCategoryService {
                 .name(name)
                 .description(trimToNull(request.getDescription()))
                 .imageUrl(trimToNull(request.getImageUrl()))
+                .active(request.getActive() == null || request.getActive())
                 .build();
 
         categoryRepository.save(category);
@@ -98,7 +106,8 @@ public class ProductCategoryService {
                 code,
                 name,
                 trimToNull(request.getDescription()),
-                trimToNull(request.getImageUrl())
+                trimToNull(request.getImageUrl()),
+                request.getActive() == null ? category.isActive() : request.getActive()
         );
 
         return getCategory(id);
@@ -110,7 +119,8 @@ public class ProductCategoryService {
                 category.getCode(),
                 category.getName(),
                 category.getDescription(),
-                category.getImageUrl()
+                category.getImageUrl(),
+                category.isActive()
         );
     }
 
@@ -132,5 +142,17 @@ public class ProductCategoryService {
 
     private String trimToNull(String value) {
         return normalize(value);
+    }
+
+    private Boolean parseActiveStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+
+        return switch (status.trim().toUpperCase()) {
+            case "ACTIVE" -> true;
+            case "INACTIVE" -> false;
+            default -> throw new IllegalArgumentException("Invalid category status: " + status);
+        };
     }
 }

@@ -34,6 +34,10 @@ public class ProductCategory {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean active = true;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -51,10 +55,11 @@ public class ProductCategory {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void update(String code, String name, String description, String imageUrl) {
+    public void update(String code, String name, String description, String imageUrl, boolean active) {
         this.code = code;
         this.name = name;
         this.description = description;
         this.imageUrl = imageUrl;
+        this.active = active;
     }
 }

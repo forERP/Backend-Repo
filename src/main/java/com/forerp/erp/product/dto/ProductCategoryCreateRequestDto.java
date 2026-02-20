@@ -15,4 +15,6 @@ public class ProductCategoryCreateRequestDto {
     private String description;
 
     private String imageUrl;
+
+    private Boolean active;
 }

@@ -143,6 +143,7 @@ public class UserService {
     }
 
     public Page<UserResponseDto> searchUsers(
+            String storeKeyword,
             String storeName,
             String storeCode,
             String name,
@@ -166,6 +167,7 @@ public class UserService {
         }
 
         return userRepository.search(
+                        normalize(storeKeyword),
                         normalize(storeName),
                         normalize(storeCode),
                         normalize(name),
@@ -186,7 +188,7 @@ public class UserService {
 
     private LoginResponseDto generateTokenResponse(User user) {
         String token = jwtUtil.generateToken(user.getLoginId());
-        return new LoginResponseDto(token, user.getRole(), user.getId());
+        return new LoginResponseDto(token, user.getRole(), user.getId(), user.getName());
     }
 
     private void autoClockInForStoreAdmin(User user) {

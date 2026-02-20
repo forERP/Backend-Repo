@@ -96,6 +96,8 @@ public class InboundController {
             @Parameter(description = "매장 ID(선택)", example = "1")
             @RequestParam(required = false) Long storeId,
 
+            @RequestParam(required = false) String storeKeyword,
+
             @Parameter(description = "매장명(선택, 부분일치)", example = "강남")
             @RequestParam(required = false) String storeName,
 
@@ -119,6 +121,6 @@ public class InboundController {
             @Min(1) @Max(100)
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(inboundService.listInbounds(storeId, storeName, storeCode, status, from, to, page, size));
+        return ResponseEntity.ok(inboundService.listInbounds(storeId, storeKeyword, storeName, storeCode, status, from, to, page, size));
     }
 }

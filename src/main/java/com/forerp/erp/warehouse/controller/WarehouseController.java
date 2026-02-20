@@ -65,12 +65,14 @@ public class WarehouseController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<WarehouseResponseDto>> searchWarehouses(
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String status,
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<WarehouseResponseDto> page = warehouseRepository.search(
+                        normalize(keyword),
                         normalize(name),
                         normalize(code),
                         parseActive(status),

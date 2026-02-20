@@ -15,6 +15,7 @@ public class ProductCategoryDetailResponseDto {
     private String name;
     private String description;
     private String imageUrl;
+    private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ProductCategoryProductResponseDto> products;

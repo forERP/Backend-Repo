@@ -29,12 +29,14 @@ public class ProductCategoryController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<ProductCategoryResponseDto>> searchCategories(
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String code,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(categoryService.searchCategories(name, code, page, size));
+        return ResponseEntity.ok(categoryService.searchCategories(keyword, name, code, status, page, size));
     }
 
     @GetMapping("/{id}")

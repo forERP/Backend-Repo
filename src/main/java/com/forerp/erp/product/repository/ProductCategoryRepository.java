@@ -17,13 +17,21 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     @Query("""
             select c
             from ProductCategory c
-            where (:name is null or lower(c.name) like lower(concat('%', :name, '%')))
+            where (
+                  :keyword is null
+                  or lower(c.name) like lower(concat('%', :keyword, '%'))
+                  or lower(c.code) like lower(concat('%', :keyword, '%'))
+              )
+              and (:name is null or lower(c.name) like lower(concat('%', :name, '%')))
               and (:code is null or lower(c.code) like lower(concat('%', :code, '%')))
+              and (:active is null or c.active = :active)
             order by c.createdAt desc
             """)
     Page<ProductCategory> search(
+            @Param("keyword") String keyword,
             @Param("name") String name,
             @Param("code") String code,
+            @Param("active") Boolean active,
             Pageable pageable
     );
 }

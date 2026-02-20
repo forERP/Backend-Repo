@@ -79,6 +79,7 @@ public class UserController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<UserResponseDto>> searchUsers(
+            @RequestParam(required = false) String storeKeyword,
             @RequestParam(required = false) String storeName,
             @RequestParam(required = false) String storeCode,
             @RequestParam(required = false) String name,
@@ -89,6 +90,7 @@ public class UserController {
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(userService.searchUsers(
+                storeKeyword,
                 storeName,
                 storeCode,
                 name,

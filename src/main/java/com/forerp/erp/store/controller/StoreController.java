@@ -34,12 +34,13 @@ public class StoreController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<StoreDto.Response>> searchStores(
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String status,
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(storeService.searchStores(name, code, status, pageable));
+        return ResponseEntity.ok(storeService.searchStores(keyword, name, code, status, pageable));
     }
 
     // 단건 조회

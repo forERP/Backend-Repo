@@ -24,22 +24,49 @@ public interface DiscardRepository extends JpaRepository<Discard, Long> {
 
     @EntityGraph(attributePaths = {
             "store",
-            "warehouse"
+            "warehouse",
+            "createdBy"
     })
     @Query("""
-        select d from Discard d
+        select distinct d from Discard d
+        left join d.items di
+        left join di.storeProduct sp
+        left join sp.product p
         where (:storeId is null or d.store.id = :storeId)
+          and (
+              :storeKeyword is null
+              or lower(d.store.name) like lower(concat('%', :storeKeyword, '%'))
+              or lower(d.store.storeCode) like lower(concat('%', :storeKeyword, '%'))
+          )
+          and (
+              :warehouseKeyword is null
+              or lower(d.warehouse.name) like lower(concat('%', :warehouseKeyword, '%'))
+              or lower(d.warehouse.code) like lower(concat('%', :warehouseKeyword, '%'))
+          )
+          and (
+              :productKeyword is null
+              or lower(p.name) like lower(concat('%', :productKeyword, '%'))
+              or lower(p.sku) like lower(concat('%', :productKeyword, '%'))
+          )
           and (:warehouseId is null or d.warehouse.id = :warehouseId)
           and (:status is null or d.status = :status)
           and (:fromDt is null or d.createdAt >= :fromDt)
           and (:toDt is null or d.createdAt < :toDt)
+          and (:discardedFromDt is null or d.discardedAt >= :discardedFromDt)
+          and (:discardedToDt is null or d.discardedAt < :discardedToDt)
+        order by d.createdAt desc
         """)
     Page<Discard> search(
             @Param("storeId") Long storeId,
+            @Param("storeKeyword") String storeKeyword,
+            @Param("warehouseKeyword") String warehouseKeyword,
+            @Param("productKeyword") String productKeyword,
             @Param("warehouseId") Long warehouseId,
             @Param("status") DiscardStatus status,
             @Param("fromDt") LocalDateTime fromDt,
             @Param("toDt") LocalDateTime toDt,
+            @Param("discardedFromDt") LocalDateTime discardedFromDt,
+            @Param("discardedToDt") LocalDateTime discardedToDt,
             Pageable pageable
     );
 }

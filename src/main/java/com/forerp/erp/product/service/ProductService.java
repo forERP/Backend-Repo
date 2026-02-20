@@ -51,10 +51,10 @@ public class ProductService {
 
     // 관리자용 상품 목록 단순 조회
     @Transactional(readOnly = true)
-    public Page<ProductListResponseDto> getAllProducts(String name, String sku, String status, Pageable pageable){
+    public Page<ProductListResponseDto> getAllProducts(String productKeyword, String name, String sku, String status, Pageable pageable){
         ProductStatus productStatus = QueryParamParser.parseEnumOrNull(status, ProductStatus.class, "status");
 
-        return productRepository.search(normalize(name), normalize(sku), productStatus, pageable)
+        return productRepository.search(normalize(productKeyword), normalize(name), normalize(sku), productStatus, pageable)
                 .map(page -> new ProductListResponseDto(
                         page.getId(),
                         page.getSku(),

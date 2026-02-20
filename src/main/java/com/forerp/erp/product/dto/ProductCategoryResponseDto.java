@@ -12,4 +12,5 @@ public class ProductCategoryResponseDto {
     private String name;
     private String description;
     private String imageUrl;
+    private boolean active;
 }

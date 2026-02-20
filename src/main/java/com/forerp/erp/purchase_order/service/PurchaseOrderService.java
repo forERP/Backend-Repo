@@ -276,20 +276,30 @@ public class PurchaseOrderService {
     @Transactional(readOnly = true)
     public PurchaseOrderListResponse list(
             Long storeId,
+            String storeKeyword,
             String storeName,
             String storeCode,
             Long warehouseId,
             Long supplierId,
             String supplierName,
             String status,
+            String createdFrom,
+            String createdTo,
+            String orderedFrom,
+            String orderedTo,
             String from,
             String to,
             int page,
             int size
     ) {
         PurchaseOrderStatus st = QueryParamParser.parseEnumOrNull(status, PurchaseOrderStatus.class, "status");
-        LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
-        LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
+        String resolvedCreatedFrom = firstNonBlank(createdFrom, from);
+        String resolvedCreatedTo = firstNonBlank(createdTo, to);
+        LocalDateTime createdFromDt = QueryParamParser.parseFromDate(resolvedCreatedFrom);
+        LocalDateTime createdToDt = QueryParamParser.parseToDateExclusive(resolvedCreatedTo);
+        LocalDateTime orderedFromDt = QueryParamParser.parseFromDate(orderedFrom);
+        LocalDateTime orderedToDt = QueryParamParser.parseToDateExclusive(orderedTo);
+        String storeKeywordValue = normalizeKeyword(storeKeyword);
         String storeNameKeyword = normalizeKeyword(storeName);
         String storeCodeKeyword = normalizeKeyword(storeCode);
         String supplierNameKeyword = normalizeKeyword(supplierName);
@@ -297,14 +307,17 @@ public class PurchaseOrderService {
         PageRequest pageable = PageRequest.of(page, size);
         Page<PurchaseOrder> result = purchaseOrderRepository.search(
                 storeId,
+                storeKeywordValue,
                 storeNameKeyword,
                 storeCodeKeyword,
                 warehouseId,
                 supplierId,
                 supplierNameKeyword,
                 st,
-                fromDt,
-                toDt,
+                createdFromDt,
+                createdToDt,
+                orderedFromDt,
+                orderedToDt,
                 pageable
         );
 
@@ -339,6 +352,16 @@ public class PurchaseOrderService {
         }
         String trimmed = keyword.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) {
+            return primary;
+        }
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback;
+        }
+        return null;
     }
 
     private void writeSectionRow(

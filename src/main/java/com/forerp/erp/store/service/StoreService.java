@@ -102,10 +102,10 @@ public class StoreService {
                 .collect(Collectors.toList());
     }
 
-    public Page<StoreDto.Response> searchStores(String name, String code, String status, Pageable pageable) {
+    public Page<StoreDto.Response> searchStores(String keyword, String name, String code, String status, Pageable pageable) {
         StoreStatus storeStatus = QueryParamParser.parseEnumOrNull(status, StoreStatus.class, "status");
 
-        return storeRepository.search(normalize(name), normalize(code), storeStatus, pageable)
+        return storeRepository.search(normalize(keyword), normalize(name), normalize(code), storeStatus, pageable)
                 .map(storeResponseMapper::toDto);
     }
 

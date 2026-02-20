@@ -23,6 +23,11 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
         join o.items oi
         join oi.storeProduct sp
         where (:storeId is null or o.store.id = :storeId)
+          and (
+              :storeKeyword is null
+              or lower(o.store.name) like lower(concat('%', :storeKeyword, '%'))
+              or lower(o.store.storeCode) like lower(concat('%', :storeKeyword, '%'))
+          )
           and (:storeName is null or lower(o.store.name) like lower(concat('%', :storeName, '%')))
           and (:storeCode is null or lower(o.store.storeCode) like lower(concat('%', :storeCode, '%')))
           and (:status is null or o.status = :status)
@@ -34,6 +39,7 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
     """)
     Page<Outbound> search(
             @Param("storeId") Long storeId,
+            @Param("storeKeyword") String storeKeyword,
             @Param("storeName") String storeName,
             @Param("storeCode") String storeCode,
             @Param("status") OutboundStatus status,

@@ -97,6 +97,7 @@ public class InboundService {
     @Transactional(readOnly = true)
     public InboundListResponse listInbounds(
             Long storeId,
+            String storeKeyword,
             String storeName,
             String storeCode,
             String status,
@@ -108,11 +109,21 @@ public class InboundService {
         InboundStatus st = QueryParamParser.parseEnumOrNull(status, InboundStatus.class, "status");
         LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
+        String storeKeywordValue = normalizeKeyword(storeKeyword);
         String storeNameKeyword = normalizeKeyword(storeName);
         String storeCodeKeyword = normalizeKeyword(storeCode);
 
         PageRequest pageable = PageRequest.of(page, size);
-        Page<Inbound> result = inboundRepository.search(storeId, storeNameKeyword, storeCodeKeyword, st, fromDt, toDt, pageable);
+        Page<Inbound> result = inboundRepository.search(
+                storeId,
+                storeKeywordValue,
+                storeNameKeyword,
+                storeCodeKeyword,
+                st,
+                fromDt,
+                toDt,
+                pageable
+        );
 
         List<InboundListResponse.InboundListItem> content = result.getContent().stream()
                 .map(i -> new InboundListResponse.InboundListItem(

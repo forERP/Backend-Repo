@@ -75,13 +75,31 @@ public class DiscardController {
     @GetMapping
     public ResponseEntity<DiscardListResponse> list(
             @RequestParam(required = false) Long storeId,
+            @RequestParam(required = false) String storeKeyword,
+            @RequestParam(required = false) String warehouseKeyword,
+            @RequestParam(required = false) String productKeyword,
             @RequestParam(required = false) Long warehouseId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String from, // yyyy-MM-dd
             @RequestParam(required = false) String to,   // yyyy-MM-dd
+            @RequestParam(required = false) String discardedFrom, // yyyy-MM-dd
+            @RequestParam(required = false) String discardedTo,   // yyyy-MM-dd
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
-        return ResponseEntity.ok(discardService.list(storeId, warehouseId, status, from, to, page, size));
+        return ResponseEntity.ok(discardService.list(
+                storeId,
+                storeKeyword,
+                warehouseKeyword,
+                productKeyword,
+                warehouseId,
+                status,
+                from,
+                to,
+                discardedFrom,
+                discardedTo,
+                page,
+                size
+        ));
     }
 }

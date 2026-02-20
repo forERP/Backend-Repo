@@ -64,6 +64,7 @@ public class PurchaseRequestController {
     @GetMapping
     public ResponseEntity<PurchaseRequestListResponse> list(
             @RequestParam(required = false) Long storeId,
+            @RequestParam(required = false) String storeKeyword,
             @RequestParam(required = false) String storeName,
             @RequestParam(required = false) String storeCode,
             @RequestParam(required = false) String status,
@@ -72,7 +73,7 @@ public class PurchaseRequestController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
-        return ResponseEntity.ok(purchaseRequestService.list(storeId, storeName, storeCode, status, from, to, page, size));
+        return ResponseEntity.ok(purchaseRequestService.list(storeId, storeKeyword, storeName, storeCode, status, from, to, page, size));
     }
 
     @Operation(summary = "Create purchase order draft")
