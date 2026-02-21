@@ -49,6 +49,12 @@ public class Warehouse {
     @Column(name = "address", length = 255)
     private String address;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @Column(nullable = false)
     private boolean active;
 
@@ -59,7 +65,9 @@ public class Warehouse {
             Store store,
             String code,
             String name,
-            String address
+            String address,
+            Double latitude,
+            Double longitude
     ) {
         if (code == null || code.isBlank()) {
             throw new IllegalArgumentException("창고 코드는 필수입니다.");
@@ -73,6 +81,8 @@ public class Warehouse {
         warehouse.code = code.trim().toUpperCase();
         warehouse.name = name.trim();
         warehouse.address = normalize(address);
+        warehouse.latitude = latitude;
+        warehouse.longitude = longitude;
         warehouse.active = true;
         warehouse.createdAt = LocalDateTime.now();
 
@@ -87,7 +97,14 @@ public class Warehouse {
         this.active = true;
     }
 
-    public void updateInfo(String code, String name, String address, Boolean active) {
+    public void updateInfo(
+            String code,
+            String name,
+            String address,
+            Double latitude,
+            Double longitude,
+            Boolean active
+    ) {
         if (code != null && !code.isBlank()) {
             this.code = code.trim().toUpperCase();
         }
@@ -96,6 +113,12 @@ public class Warehouse {
         }
         if (address != null) {
             this.address = normalize(address);
+        }
+        if (latitude != null || address != null) {
+            this.latitude = latitude;
+        }
+        if (longitude != null || address != null) {
+            this.longitude = longitude;
         }
         if (active != null) {
             this.active = active;

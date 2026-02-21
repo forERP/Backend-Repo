@@ -60,6 +60,8 @@ public class StoreService {
             .status(StoreStatus.OPEN)
             .phone(request.getPhone())
             .address(request.getAddress())
+            .latitude(request.getLatitude())
+            .longitude(request.getLongitude())
             .build();
 
         Store saved = storeRepository.save(store);
@@ -89,7 +91,13 @@ public class StoreService {
     @Transactional
     public StoreDto.Response updateStore(Long id, StoreDto.UpdateRequest request){
         Store store = storeReader.getStore(id);
-        store.updateInfo(request.getName(), request.getPhone(), request.getAddress());
+        store.updateInfo(
+                request.getName(),
+                request.getPhone(),
+                request.getAddress(),
+                request.getLatitude(),
+                request.getLongitude()
+        );
         
         logAction("UPDATE_STORE_INFO", store.getId());
         return storeResponseMapper.toDto(store);

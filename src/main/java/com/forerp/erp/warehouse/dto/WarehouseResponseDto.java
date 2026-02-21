@@ -15,6 +15,8 @@ public class WarehouseResponseDto {
     private String code;
     private String name;
     private String address;
+    private Double latitude;
+    private Double longitude;
     private Long storeId;
     private String storeName;
     private boolean active;
@@ -26,6 +28,8 @@ public class WarehouseResponseDto {
                 warehouse.getCode(),
                 warehouse.getName(),
                 warehouse.getAddress(),
+                warehouse.getLatitude(),
+                warehouse.getLongitude(),
                 warehouse.getStore().getId(),
                 warehouse.getStore().getName(),
                 warehouse.isActive()

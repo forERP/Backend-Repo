@@ -33,6 +33,12 @@ public class Supplier {
     @Column(length = 200)
     private String address;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -45,7 +51,9 @@ public class Supplier {
             String contactName,
             String contactPhone,
             String contactEmail,
-            String address
+            String address,
+            Double latitude,
+            Double longitude
     ) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("거래처명은 필수입니다.");
@@ -57,6 +65,8 @@ public class Supplier {
         supplier.contactPhone = normalize(contactPhone);
         supplier.contactEmail = normalize(contactEmail);
         supplier.address = normalize(address);
+        supplier.latitude = latitude;
+        supplier.longitude = longitude;
         return supplier;
     }
 
@@ -66,6 +76,8 @@ public class Supplier {
             String contactPhone,
             String contactEmail,
             String address,
+            Double latitude,
+            Double longitude,
             Boolean active
     ) {
         if (name != null) {
@@ -79,6 +91,12 @@ public class Supplier {
         this.contactPhone = normalize(contactPhone);
         this.contactEmail = normalize(contactEmail);
         this.address = normalize(address);
+        if (latitude != null || address != null) {
+            this.latitude = latitude;
+        }
+        if (longitude != null || address != null) {
+            this.longitude = longitude;
+        }
 
         if (active != null) {
             this.active = active;

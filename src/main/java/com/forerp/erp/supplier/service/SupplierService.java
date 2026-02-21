@@ -55,11 +55,22 @@ public class SupplierService {
                 request.getContactName(),
                 request.getContactPhone(),
                 request.getContactEmail(),
-                request.getAddress()
+                request.getAddress(),
+                request.getLatitude(),
+                request.getLongitude()
         );
 
         if (Boolean.FALSE.equals(request.getActive())) {
-            supplier.update(null, request.getContactName(), request.getContactPhone(), request.getContactEmail(), request.getAddress(), false);
+            supplier.update(
+                    null,
+                    request.getContactName(),
+                    request.getContactPhone(),
+                    request.getContactEmail(),
+                    request.getAddress(),
+                    request.getLatitude(),
+                    request.getLongitude(),
+                    false
+            );
         }
 
         Supplier saved = supplierRepository.save(supplier);
@@ -77,6 +88,8 @@ public class SupplierService {
                 request.getContactPhone(),
                 request.getContactEmail(),
                 request.getAddress(),
+                request.getLatitude(),
+                request.getLongitude(),
                 request.getActive()
         );
 

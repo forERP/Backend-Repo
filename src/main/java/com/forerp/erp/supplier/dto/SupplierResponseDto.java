@@ -18,6 +18,8 @@ public class SupplierResponseDto {
     private String contactPhone;
     private String contactEmail;
     private String address;
+    private Double latitude;
+    private Double longitude;
     private boolean active;
     private LocalDateTime createdAt;
 
@@ -29,6 +31,8 @@ public class SupplierResponseDto {
                 supplier.getContactPhone(),
                 supplier.getContactEmail(),
                 supplier.getAddress(),
+                supplier.getLatitude(),
+                supplier.getLongitude(),
                 supplier.isActive(),
                 supplier.getCreatedAt()
         );

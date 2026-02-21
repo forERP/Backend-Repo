@@ -39,6 +39,12 @@ public class Store {
     @Column(name = "address", length = 255)
     private String address;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -48,13 +54,24 @@ public class Store {
     }
 
     @Builder
-    private Store(String name, StoreType storeType, StoreStatus status, String storeCode, String phone, String address) {
+    private Store(
+            String name,
+            StoreType storeType,
+            StoreStatus status,
+            String storeCode,
+            String phone,
+            String address,
+            Double latitude,
+            Double longitude
+    ) {
         this.name = name;
         this.storeCode = storeCode;
         this.storeType = (storeType == null) ? StoreType.STORE : storeType;
         this.status = (status == null) ? StoreStatus.OPEN : status;
         this.phone = phone;
         this.address = address;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public boolean isHQ() {
@@ -77,9 +94,11 @@ public class Store {
         this.status = StoreStatus.OPEN;
     }
 
-    public void updateInfo(String name, String phone, String address) {
+    public void updateInfo(String name, String phone, String address, Double latitude, Double longitude) {
         if (name != null) this.name = name;
         if (phone != null) this.phone = phone;
         if (address != null) this.address = address;
+        if (latitude != null || address != null) this.latitude = latitude;
+        if (longitude != null || address != null) this.longitude = longitude;
     }
 }

@@ -13,5 +13,7 @@ public class SupplierUpdateRequestDto {
     private String contactEmail;
 
     private String address;
+    private Double latitude;
+    private Double longitude;
     private Boolean active;
 }

@@ -21,4 +21,6 @@ public class WarehouseRequestDto {
     private String name;
 
     private String address;
+    private Double latitude;
+    private Double longitude;
 }

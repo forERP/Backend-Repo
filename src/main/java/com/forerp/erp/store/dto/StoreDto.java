@@ -18,6 +18,8 @@ public class StoreDto {
         private String name;
         private String phone;
         private String address;
+        private Double latitude;
+        private Double longitude;
         private StoreType type;
     }
 
@@ -27,6 +29,8 @@ public class StoreDto {
         private String name;
         private String phone;
         private String address;
+        private Double latitude;
+        private Double longitude;
     }
 
     @Getter
@@ -43,6 +47,8 @@ public class StoreDto {
         private String name;
         private String phone;
         private String address;
+        private Double latitude;
+        private Double longitude;
         private StoreType type;
         private StoreStatus status;
         private LocalDateTime createdAt;
