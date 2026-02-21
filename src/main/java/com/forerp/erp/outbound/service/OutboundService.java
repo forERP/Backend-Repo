@@ -80,13 +80,13 @@ public class OutboundService {
         Shipment shipment = loader.requireShipment(outbound);
 
         if (outbound.getStatus() != OutboundStatus.CONFIRMED && outbound.getStatus() != OutboundStatus.ARRIVED) {
-            throw new IllegalStateException("?? ?? ?? ??? ?? ??? ????.");
+            throw new IllegalStateException("출고 상태에서는 배송 완료 처리를 할 수 없습니다.");
         }
 
         if (shipment.getStatus() == ShipmentStatus.SHIPPING) {
             shipment.arrive();
         } else if (shipment.getStatus() != ShipmentStatus.ARRIVED) {
-            throw new IllegalStateException("?? ?? ?? ??? ?? ??? ????.");
+            throw new IllegalStateException("현재 배송 상태에서는 배송 완료 처리를 할 수 없습니다.");
         }
 
         if (outbound.getOrder().getStatus() != OrderStatus.ARRIVED) {
@@ -110,7 +110,7 @@ public class OutboundService {
 
         Shipment shipment = outbound.getShipment();
         if (shipment != null && shipment.getStatus() != ShipmentStatus.READY) {
-            throw new IllegalStateException("?? ?? ???? ?? ??? ??????.");
+            throw new IllegalStateException("배송 출발 이후에는 출고를 취소할 수 없습니다.");
         }
 
         outbound.cancel();

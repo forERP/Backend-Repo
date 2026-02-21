@@ -45,6 +45,7 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
               and (:status is null or s.status = :status)
               and (:fromDt is null or s.createdAt >= :fromDt)
               and (:toDt is null or s.createdAt < :toDt)
+              and (s.carrier is null or upper(s.carrier) <> 'POS')
             order by s.createdAt desc
             """,
             countQuery = """
@@ -63,6 +64,7 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
               and (:status is null or s.status = :status)
               and (:fromDt is null or s.createdAt >= :fromDt)
               and (:toDt is null or s.createdAt < :toDt)
+              and (s.carrier is null or upper(s.carrier) <> 'POS')
             """)
     Page<Shipment> search(
             @Param("includeInbound") boolean includeInbound,

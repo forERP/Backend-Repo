@@ -131,7 +131,7 @@ public class ShipmentService {
                     null,
                     false,
                     false,
-                    "??? ?? ?? ????? ?? ?? ??? ??? ? ????.",
+                    "택배사 코드 또는 송장번호가 없어 배송 추적을 조회할 수 없습니다.",
                     List.of()
             );
         }
@@ -140,7 +140,7 @@ public class ShipmentService {
         try {
             tracked = trackerDeliveryClient.track(carrierCode, trackingNumber);
         } catch (Exception ex) {
-            log.warn("Tracker ?? ??. shipmentId={}", shipment.getId(), ex);
+            log.warn("트래커 조회 실패. shipmentId={}", shipment.getId(), ex);
             return new ShipmentTrackingResponse(
                     shipment.getId(),
                     flowType.name(),
@@ -155,7 +155,7 @@ public class ShipmentService {
                     null,
                     false,
                     false,
-                    "???? ? ??? ??????.",
+                    "트래커 조회 중 오류가 발생했습니다.",
                     List.of()
             );
         }
@@ -175,7 +175,7 @@ public class ShipmentService {
                     null,
                     false,
                     false,
-                    "?? ??? ?? ??? ????.",
+                    "배송 추적 정보를 찾을 수 없습니다.",
                     List.of()
             );
         }
@@ -250,7 +250,7 @@ public class ShipmentService {
     public void handleTrackerWebhook(String token, String carrierId, String trackingNumber) {
         String configuredSecret = normalize(trackerWebhookSecret);
         if (trackerWebhookEnabled && configuredSecret != null && !configuredSecret.equals(normalize(token))) {
-            throw new IllegalArgumentException("???? ?? webhook token ???.");
+            throw new IllegalArgumentException("유효하지 않은 webhook token 입니다.");
         }
 
         String normalizedCarrierId = normalize(carrierId);
@@ -271,7 +271,7 @@ public class ShipmentService {
         try {
             tracked = trackerDeliveryClient.track(normalizedCarrierId, normalizedTrackingNumber);
         } catch (Exception ex) {
-            log.warn("Tracker webhook ? ?? ??. shipmentId={}", shipment.getId(), ex);
+            log.warn("Tracker webhook 동기화 실패. shipmentId={}", shipment.getId(), ex);
             return;
         }
 
@@ -444,7 +444,7 @@ public class ShipmentService {
 
     private Shipment loadShipment(Long shipmentId) {
         return shipmentRepository.findById(shipmentId)
-                .orElseThrow(() -> new IllegalArgumentException("?? ??? ?? ? ????. shipmentId=" + shipmentId));
+                .orElseThrow(() -> new IllegalArgumentException("배송 정보를 찾을 수 없습니다. shipmentId=" + shipmentId));
     }
 
     private String buildCallbackUrl() {

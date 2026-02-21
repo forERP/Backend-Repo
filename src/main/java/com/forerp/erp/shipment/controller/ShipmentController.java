@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "Shipment", description = "??/?? ?? ? ?? ?? ?? API")
+@Tag(name = "Shipment", description = "입고/출고 배송 및 송장 추적 API")
 @RestController
 @RequestMapping("/api/shipments")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class ShipmentController {
 
     private final ShipmentService shipmentService;
 
-    @Operation(summary = "??? ?? ??")
+    @Operation(summary = "택배사 목록 조회")
     @GetMapping("/carriers")
     public ResponseEntity<List<ShipmentCarrierResponse>> listCarriers(
             @RequestParam(required = false) String searchText,
@@ -38,7 +38,7 @@ public class ShipmentController {
         return ResponseEntity.ok(shipmentService.listCarriers(searchText, size));
     }
 
-    @Operation(summary = "?? ?? ??")
+    @Operation(summary = "배송 목록 조회")
     @GetMapping
     public ResponseEntity<ShipmentListResponse> listShipments(
             @RequestParam(required = false) String flowType,
@@ -62,7 +62,7 @@ public class ShipmentController {
         ));
     }
 
-    @Operation(summary = "?? ?? ??", description = "sync=true ? ?? ?? ?? ??? ?? ?? ??? ?????.")
+    @Operation(summary = "배송 추적 조회", description = "sync=true 시 트래커 상태를 동기화하여 내부 상태에 반영합니다.")
     @GetMapping("/{shipmentId}/tracking")
     public ResponseEntity<ShipmentTrackingResponse> getTracking(
             @PathVariable Long shipmentId,
