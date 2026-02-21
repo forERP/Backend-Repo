@@ -231,7 +231,7 @@ public class PaymentService {
 
         Outbound outbound = outboundRepository.findByOrder_Id(order.getId()).orElse(null);
         boolean discardStock = Boolean.TRUE.equals(request.getDiscardStock());
-        preValidateStockAdjustment(order, outbound, discardStock);
+        preValidateStockAdjustment(order, outbound, discardStock, cancelMap);
 
         JsonNode cancelResult = tossPaymentsClient.cancel(
                 payment.getPaymentKey(),
@@ -243,6 +243,9 @@ public class PaymentService {
         boolean stockRefunded = false;
 
         if (order.getStatus() == OrderStatus.PLACED) {
+            if (discardStock) {
+                applyDiscardStockForPlaced(order, cancelMap, actor);
+            }
             List<Order.OrderItemCancelCommand> commands = cancelMap.entrySet().stream()
                     .map(entry -> new Order.OrderItemCancelCommand(entry.getKey(), entry.getValue()))
                     .toList();
@@ -280,7 +283,8 @@ public class PaymentService {
         paymentCancelRepository.save(paymentCancel);
         realtimeEventService.publishPaymentChanged(payment.getStore().getId(), payment.getId(), "canceled");
         realtimeEventService.publishOrderChanged(payment.getStore().getId(), order.getId(), "canceled");
-        if (("PREPARED".equals(orderStatusBefore) && discardStock)
+        if (("PLACED".equals(orderStatusBefore) && discardStock)
+                || ("PREPARED".equals(orderStatusBefore) && discardStock)
                 || (("SHIPPED".equals(orderStatusBefore) || "ARRIVED".equals(orderStatusBefore)) && stockRefunded)) {
             realtimeEventService.publishInventoryChanged(payment.getStore().getId(), "payment_cancel_stock_adjusted");
         }
@@ -497,8 +501,39 @@ public class PaymentService {
         return BigDecimal.ZERO;
     }
 
-    private void preValidateStockAdjustment(Order order, Outbound outbound, boolean discardStock) {
-        if (order.getStatus() != OrderStatus.PREPARED || !discardStock) {
+    private void preValidateStockAdjustment(
+            Order order,
+            Outbound outbound,
+            boolean discardStock,
+            Map<Long, Integer> cancelMap
+    ) {
+        if (!discardStock) {
+            return;
+        }
+
+        if (order.getStatus() == OrderStatus.PLACED) {
+            for (Map.Entry<Long, Integer> entry : cancelMap.entrySet()) {
+                OrderItem orderItem = order.getItems().stream()
+                        .filter(item -> item.getId().equals(entry.getKey()))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("주문 항목을 찾을 수 없습니다."));
+
+                StoreProduct sp = storeProductRepository
+                        .findByStore_IdAndWarehouse_IdAndProduct_Id(
+                                order.getStore().getId(),
+                                order.getWarehouse().getId(),
+                                orderItem.getProduct().getId()
+                        )
+                        .orElseThrow(() -> new IllegalStateException("재고 정보를 찾을 수 없습니다."));
+
+                if (sp.getQuantity() < entry.getValue()) {
+                    throw new IllegalStateException("폐기 처리할 재고가 부족합니다.");
+                }
+            }
+            return;
+        }
+
+        if (order.getStatus() != OrderStatus.PREPARED) {
             return;
         }
 
@@ -552,6 +587,32 @@ public class PaymentService {
 
             InventoryHistory history = sp.decreaseStock(
                     orderItem.getQuantity(),
+                    RefType.DISCARD,
+                    order.getId(),
+                    orderItem.getId(),
+                    actor
+            );
+            inventoryHistoryRepository.save(history);
+        }
+    }
+
+    private void applyDiscardStockForPlaced(Order order, Map<Long, Integer> cancelMap, User actor) {
+        for (Map.Entry<Long, Integer> entry : cancelMap.entrySet()) {
+            OrderItem orderItem = order.getItems().stream()
+                    .filter(item -> item.getId().equals(entry.getKey()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("주문 항목을 찾을 수 없습니다."));
+
+            StoreProduct sp = storeProductRepository
+                    .findByStore_IdAndWarehouse_IdAndProduct_Id(
+                            order.getStore().getId(),
+                            order.getWarehouse().getId(),
+                            orderItem.getProduct().getId()
+                    )
+                    .orElseThrow(() -> new IllegalStateException("재고 정보를 찾을 수 없습니다."));
+
+            InventoryHistory history = sp.decreaseStock(
+                    entry.getValue(),
                     RefType.DISCARD,
                     order.getId(),
                     orderItem.getId(),

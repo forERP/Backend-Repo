@@ -13,6 +13,7 @@ import com.forerp.erp.returns.dto.ReturnProcessRequest;
 import com.forerp.erp.returns.dto.ReturnResponse;
 import com.forerp.erp.returns.repository.SalesReturnRepository;
 import com.forerp.erp.user.domain.User;
+import com.forerp.erp.user.domain.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -146,6 +147,9 @@ public class ReturnService {
     }
 
     private void verifyStoreAccess(User actor, Long targetStoreId) {
+        if (hasGlobalStoreAccess(actor)) {
+            return;
+        }
         if (actor == null || actor.getStore() == null || actor.getStore().getId() == null) {
             return;
         }
@@ -155,6 +159,9 @@ public class ReturnService {
     }
 
     private Long resolveRequestedStoreId(User actor, Long requestedStoreId) {
+        if (hasGlobalStoreAccess(actor)) {
+            return requestedStoreId;
+        }
         if (actor == null || actor.getStore() == null || actor.getStore().getId() == null) {
             return requestedStoreId;
         }
@@ -167,6 +174,10 @@ public class ReturnService {
             throw new IllegalStateException("다른 매장의 반품 내역에는 접근할 수 없습니다.");
         }
         return actorStoreId;
+    }
+
+    private boolean hasGlobalStoreAccess(User actor) {
+        return actor != null && actor.getRole() == UserRole.HQ_ADMIN;
     }
 
     private ReturnStatus parseStatus(String status) {
