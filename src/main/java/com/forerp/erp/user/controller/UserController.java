@@ -31,8 +31,11 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserCreateRequestDto request) {
-        return ResponseEntity.ok(userService.createUser(request));
+    public ResponseEntity<UserResponseDto> createUser(
+            @AuthenticationPrincipal User actor,
+            @Valid @RequestBody UserCreateRequestDto request
+    ) {
+        return ResponseEntity.ok(userService.createUser(actor, request));
     }
 
     @DeleteMapping("/{id}")

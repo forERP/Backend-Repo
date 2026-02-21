@@ -45,7 +45,7 @@ public class UserService {
     private final AttendanceRepository attendanceRepository;
 
     @Transactional
-    public UserResponseDto createUser(UserCreateRequestDto request) {
+    public UserResponseDto createUser(User actor, UserCreateRequestDto request) {
         String loginId = normalize(request.getLoginId());
         String employeeCode = normalize(request.getEmployeeCode());
         if (loginId == null) {
@@ -55,6 +55,7 @@ public class UserService {
             throw new IllegalArgumentException("employeeCode is required.");
         }
 
+        enforceStoreScopedCreatePermission(actor, request.getStoreId());
         userReader.validateNewUser(loginId, employeeCode);
         Store store = userReader.getStore(request.getStoreId());
 
@@ -250,6 +251,22 @@ public class UserService {
 
     private boolean isBackofficeLoginRole(UserRole role) {
         return role == UserRole.HQ_ADMIN || role == UserRole.STORE_ADMIN;
+    }
+
+    private void enforceStoreScopedCreatePermission(User actor, Long requestStoreId) {
+        if (actor == null || actor.getId() == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "권한이 없습니다.");
+        }
+
+        User currentUser = userReader.getUser(actor.getId());
+        if (currentUser.getRole() != UserRole.STORE_ADMIN) {
+            return;
+        }
+
+        Long actorStoreId = currentUser.getStore() != null ? currentUser.getStore().getId() : null;
+        if (actorStoreId == null || requestStoreId == null || !actorStoreId.equals(requestStoreId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "매장 관리자는 본인 매장 직원만 등록할 수 있습니다.");
+        }
     }
 
     private void logAction(String action, Long targetId) {
