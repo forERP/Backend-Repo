@@ -19,4 +19,6 @@ public class AdminBootstrapProperties {
     private UserRole role = UserRole.HQ_ADMIN;
 
     private String storeCode = "000";
+    private String storeAddress = "";
+    private String storePhone = "";
 }

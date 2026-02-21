@@ -24,6 +24,8 @@ app:
       phone-number: ${BOOTSTRAP_ADMIN_PHONE_NUMBER:010-0000-0000}
       role: ${BOOTSTRAP_ADMIN_ROLE:HQ_ADMIN}
       store-code: ${BOOTSTRAP_ADMIN_STORE_CODE:000}
+      store-address: ${BOOTSTRAP_HQ_STORE_ADDRESS:}
+      store-phone: ${BOOTSTRAP_HQ_STORE_PHONE:}
 
 jwt:
   secret:

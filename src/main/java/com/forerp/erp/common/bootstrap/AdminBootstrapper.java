@@ -40,13 +40,32 @@ public class AdminBootstrapper implements ApplicationRunner {
     }
 
     private Store ensureHqStore() {
+        String hqAddress = normalize(props.getStoreAddress());
+        String hqPhone = normalize(props.getStorePhone());
+
         return storeRepository.findFirstByStoreType(StoreType.HQ)
+                .map(existing -> {
+                    if (hqAddress != null || hqPhone != null) {
+                        String nextAddress = hqAddress != null ? hqAddress : existing.getAddress();
+                        String nextPhone = hqPhone != null ? hqPhone : existing.getPhone();
+                        existing.updateInfo(
+                                null,
+                                nextPhone,
+                                nextAddress,
+                                existing.getLatitude(),
+                                existing.getLongitude()
+                        );
+                    }
+                    return existing;
+                })
                 .orElseGet(() -> storeRepository.save(
                         Store.builder()
                                 .name(HQ_STORE_NAME)
                                 .storeType(StoreType.HQ)
                                 .status(StoreStatus.OPEN)
                                 .storeCode(props.getStoreCode())
+                                .address(hqAddress)
+                                .phone(hqPhone)
                                 .build()
                 ));
     }
@@ -65,5 +84,13 @@ public class AdminBootstrapper implements ApplicationRunner {
                 .build();
 
         userRepository.save(admin);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
