@@ -241,7 +241,10 @@ public class TrackerDeliveryClient {
         }
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IllegalStateException("Tracker API responded with status=" + response.statusCode());
+            throw new IllegalStateException(
+                    "Tracker API responded with status=" + response.statusCode()
+                            + ", body=" + abbreviate(response.body(), 300)
+            );
         }
 
         JsonNode root;
@@ -253,7 +256,25 @@ public class TrackerDeliveryClient {
 
         JsonNode errors = root.path("errors");
         if (errors.isArray() && !errors.isEmpty()) {
-            String message = errors.get(0).path("message").asText("Tracker API error");
+            boolean onlyNotFound = true;
+            for (JsonNode errorNode : errors) {
+                String code = text(errorNode.path("extensions"), "code");
+                if (!"NOT_FOUND".equalsIgnoreCase(code)) {
+                    onlyNotFound = false;
+                    break;
+                }
+            }
+            if (onlyNotFound) {
+                JsonNode data = root.path("data");
+                if (!data.isMissingNode() && !data.isNull()) {
+                    return data;
+                }
+            }
+
+            String message = errors.get(0).path("message").asText();
+            if (message == null || message.isBlank()) {
+                message = "Tracker API returned GraphQL errors: " + abbreviate(errors.toString(), 300);
+            }
             throw new IllegalStateException(message);
         }
 
@@ -289,6 +310,17 @@ public class TrackerDeliveryClient {
         }
         String value = node.path(field).asText(null);
         return normalize(value);
+    }
+
+    private String abbreviate(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength) + "...";
     }
 
     public record TrackerCarrier(String id, String name) {
