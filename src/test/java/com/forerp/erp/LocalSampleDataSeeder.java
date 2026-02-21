@@ -168,8 +168,7 @@ class LocalSampleDataSeeder {
                 "서울특별시 마포구 와우산로 98"
         );
 
-        ensureUser("hq-admin-choi", "0001", "최본사", "010-0000-0001", headquarters, UserRole.HQ_ADMIN);
-
+        ensureUser("hqchoi", "0001", "최본사", "010-0000-0001", headquarters, UserRole.HQ_ADMIN);
         ensureUser("sg-manager-kim", "1029", "김서강", "010-1111-2222", sogang, UserRole.STORE_ADMIN);
         ensureUser("sg-manager-park", "1928", "박서강", "010-1111-3333", sogang, UserRole.STORE_ADMIN);
         ensureUser("sg-hall-choi", "1119", "최서강", "010-1111-4444", sogang, UserRole.STORE_HALL_STAFF);

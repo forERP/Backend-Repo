@@ -187,6 +187,19 @@ public class PaymentService {
     }
 
     public PaymentCancelResponse cancel(User actor, Long paymentId, PaymentCancelRequest request) {
+        return cancelInternal(actor, paymentId, request, false);
+    }
+
+    public PaymentCancelResponse cancelForReturn(User actor, Long paymentId, PaymentCancelRequest request) {
+        return cancelInternal(actor, paymentId, request, true);
+    }
+
+    private PaymentCancelResponse cancelInternal(
+            User actor,
+            Long paymentId,
+            PaymentCancelRequest request,
+            boolean fromReturnProcess
+    ) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new IllegalArgumentException("결제를 찾을 수 없습니다."));
         verifyPaymentAccess(payment, actor);
@@ -206,7 +219,7 @@ public class PaymentService {
 
         Map<Long, Integer> cancelMap = normalizeCancelItems(request, order);
         boolean fullCancel = isFullCancel(cancelMap, order);
-        validateCancelPolicy(order.getStatus(), fullCancel);
+        validateCancelPolicy(order.getStatus(), fullCancel, fromReturnProcess);
 
         BigDecimal cancelAmount = computeCancelAmount(order, cancelMap);
         if (cancelAmount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -611,7 +624,7 @@ public class PaymentService {
         return true;
     }
 
-    private void validateCancelPolicy(OrderStatus orderStatus, boolean fullCancel) {
+    private void validateCancelPolicy(OrderStatus orderStatus, boolean fullCancel, boolean fromReturnProcess) {
         if (orderStatus == OrderStatus.PLACED) {
             return;
         }
@@ -620,8 +633,15 @@ public class PaymentService {
             throw new IllegalStateException("부분 취소는 PLACED 상태에서만 가능합니다.");
         }
 
-        if (orderStatus == OrderStatus.PREPARED || orderStatus == OrderStatus.SHIPPED || orderStatus == OrderStatus.ARRIVED) {
+        if (orderStatus == OrderStatus.PREPARED) {
             return;
+        }
+
+        if (orderStatus == OrderStatus.SHIPPED || orderStatus == OrderStatus.ARRIVED) {
+            if (fromReturnProcess) {
+                return;
+            }
+            throw new IllegalStateException("출고 이후 주문은 반품 API를 사용해 주세요.");
         }
 
         throw new IllegalStateException("취소 가능한 주문 상태가 아닙니다. status=" + orderStatus);
