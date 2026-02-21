@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: true
     properties:
       hibernate:
@@ -26,6 +26,11 @@ app:
       store-code: ${BOOTSTRAP_ADMIN_STORE_CODE:000}
       store-address: ${BOOTSTRAP_HQ_STORE_ADDRESS:}
       store-phone: ${BOOTSTRAP_HQ_STORE_PHONE:}
+  seed:
+    sample:
+      enabled: ${APP_SEED_SAMPLE_ENABLED:false}
+      mode: ${APP_SEED_SAMPLE_MODE:upsert}
+      default-password: ${APP_SEED_DEFAULT_PASSWORD:1111}
 
 jwt:
   secret:

@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     java.util.Optional<Product> findBySku(String sku);
+    java.util.Optional<Product> findFirstByName(String name);
 
     java.util.List<Product> findAllByStatus(ProductStatus status);
 

@@ -9,11 +9,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     List<Warehouse> findByStore_Id(Long storeId);
     List<Warehouse> findByStore_IdAndActiveTrue(Long storeId);
     List<Warehouse> findByActiveTrue();
+    Optional<Warehouse> findByStore_IdAndCode(Long storeId, String code);
 
     @EntityGraph(attributePaths = {"store"})
     @Query("""

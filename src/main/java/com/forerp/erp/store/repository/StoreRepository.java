@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface StoreRepository  extends JpaRepository<Store, Long> {
     Optional<Store> findFirstByStoreType(StoreType storeType);
     Optional<Store> findTopByStoreCodeNotOrderByStoreCodeDesc(String storeCodeNot);
+    Optional<Store> findByStoreCode(String storeCode);
 
     @Query("""
         select s from Store s
