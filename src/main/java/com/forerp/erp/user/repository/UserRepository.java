@@ -24,9 +24,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmployeeCode(String employeeCode);
 
-    @Query("select max(u.employeeCode) from User u")
-    String findMaxEmployeeCode();
-
     @Query("""
         select u from User u
         left join u.store s

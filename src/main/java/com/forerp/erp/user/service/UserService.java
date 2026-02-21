@@ -21,9 +21,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -44,14 +46,21 @@ public class UserService {
 
     @Transactional
     public UserResponseDto createUser(UserCreateRequestDto request) {
-        userReader.validateNewUser(request.getLoginId());
+        String loginId = normalize(request.getLoginId());
+        String employeeCode = normalize(request.getEmployeeCode());
+        if (loginId == null) {
+            throw new IllegalArgumentException("loginId is required.");
+        }
+        if (employeeCode == null) {
+            throw new IllegalArgumentException("employeeCode is required.");
+        }
+
+        userReader.validateNewUser(loginId, employeeCode);
         Store store = userReader.getStore(request.getStoreId());
 
-        String generatedEmployeeCode = generateNextEmployeeCode();
-
         User user = User.builder()
-                .loginId(request.getLoginId())
-                .employeeCode(generatedEmployeeCode)
+                .loginId(loginId)
+                .employeeCode(employeeCode)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
                 .phoneNumber(request.getPhoneNumber().trim())
@@ -105,6 +114,10 @@ public class UserService {
             throw new IllegalArgumentException("Invalid password.");
         }
 
+        if (!isBackofficeLoginRole(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자(HQ/STORE) 계정만 관리자페이지에 로그인할 수 있습니다.");
+        }
+
         auditLogService.logActionSafely(user, AuditLogAction.ADMIN_LOGIN, AuditLogTargetType.USER, user.getId());
         return generateTokenResponse(user);
     }
@@ -144,6 +157,21 @@ public class UserService {
 
     public UserResponseDto getUser(Long id) {
         return new UserResponseDto(userReader.getUser(id));
+    }
+
+    public UserResponseDto getCurrentUser(User actor) {
+        if (actor == null) {
+            throw new IllegalArgumentException("No authenticated user.");
+        }
+        return new UserResponseDto(userReader.getUser(actor.getId()));
+    }
+
+    public boolean isEmployeeCodeAvailable(String employeeCode) {
+        String normalizedEmployeeCode = normalize(employeeCode);
+        if (normalizedEmployeeCode == null) {
+            return false;
+        }
+        return userReader.isEmployeeCodeAvailable(normalizedEmployeeCode);
     }
 
     public List<UserResponseDto> getAllUsers() {
@@ -220,6 +248,10 @@ public class UserService {
         return role == UserRole.STORE_ADMIN || role == UserRole.HQ_ADMIN;
     }
 
+    private boolean isBackofficeLoginRole(UserRole role) {
+        return role == UserRole.HQ_ADMIN || role == UserRole.STORE_ADMIN;
+    }
+
     private void logAction(String action, Long targetId) {
         auditLogService.logCurrentUserAction(action, AuditLogTargetType.USER, targetId);
     }
@@ -261,15 +293,4 @@ public class UserService {
         }
     }
 
-    private String generateNextEmployeeCode() {
-        long nextSequence = userReader.getNextEmployeeSequence();
-        String employeeCode = String.format("%04d", nextSequence);
-
-        while (userRepository.existsByEmployeeCode(employeeCode)) {
-            nextSequence++;
-            employeeCode = String.format("%04d", nextSequence);
-        }
-
-        return employeeCode;
-    }
 }

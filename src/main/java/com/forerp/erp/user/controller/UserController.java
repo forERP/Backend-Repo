@@ -80,6 +80,20 @@ public class UserController {
         return ResponseEntity.ok(userService.getUser(id));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getCurrentUser(@AuthenticationPrincipal User actor) {
+        return ResponseEntity.ok(userService.getCurrentUser(actor));
+    }
+
+    @GetMapping("/check-employee-code")
+    public ResponseEntity<Map<String, Object>> checkEmployeeCode(@RequestParam String employeeCode) {
+        boolean available = userService.isEmployeeCodeAvailable(employeeCode);
+        return ResponseEntity.ok(Map.of(
+                "employeeCode", employeeCode,
+                "available", available
+        ));
+    }
+
     @GetMapping
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());

@@ -177,8 +177,8 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
 
         User hqManager = upsertUser(hqStore, "hqchoi", "0001", "최본사", UserRole.HQ_ADMIN, "010-0001-0001");
         User sogangManagerKim = upsertUser(sogangStore, "sgkim", "1029", "김서강", UserRole.STORE_ADMIN, "010-1029-1029");
-        User sogangManagerPark = upsertUser(sogangStore, "sgchoi", "1031", "박서강", UserRole.STORE_ADMIN, "010-1031-1031");
-        User sogangHallStaff = upsertUser(sogangStore, "sghall", "1111", "최서강", UserRole.STORE_HALL_STAFF, "010-1111-1111");
+        User sogangManagerPark = upsertUser(sogangStore, "sgchoi", "1031", "최서강", UserRole.STORE_ADMIN, "010-1031-1031");
+        User sogangHallStaff = upsertUser(sogangStore, "sghall", "1111", "박서강", UserRole.STORE_HALL_STAFF, "010-1111-1111");
         User sogangKitchenStaff = upsertUser(sogangStore, "sgkitchen", "1112", "이서강", UserRole.STORE_KITCHEN_STAFF, "010-1112-1112");
         User sogangHallStaffExtra = upsertUser(sogangStore, "sghall2", "1113", "정서강", UserRole.STORE_HALL_STAFF, "010-1113-1113");
         User sogangKitchenStaffExtra = upsertUser(sogangStore, "sgkitchen2", "1114", "한서강", UserRole.STORE_KITCHEN_STAFF, "010-1114-1114");
