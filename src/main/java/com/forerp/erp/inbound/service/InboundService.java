@@ -101,12 +101,14 @@ public class InboundService {
             String storeName,
             String storeCode,
             String status,
+            String shipmentStatus,
             String from,
             String to,
             int page,
             int size
     ) {
         InboundStatus st = QueryParamParser.parseEnumOrNull(status, InboundStatus.class, "status");
+        ShipmentStatus shipmentSt = QueryParamParser.parseEnumOrNull(shipmentStatus, ShipmentStatus.class, "shipmentStatus");
         LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
         String storeKeywordValue = normalizeKeyword(storeKeyword);
@@ -120,6 +122,7 @@ public class InboundService {
                 storeNameKeyword,
                 storeCodeKeyword,
                 st,
+                shipmentSt,
                 fromDt,
                 toDt,
                 pageable

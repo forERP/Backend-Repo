@@ -106,6 +106,8 @@ public class InboundController {
 
             @Parameter(description = "입고 상태(선택): CREATED/CONFIRMED/CANCELED", example = "CREATED")
             @RequestParam(required = false) String status,
+            @Parameter(description = "Shipment status (optional): READY/SHIPPING/ARRIVED", example = "SHIPPING")
+            @RequestParam(required = false) String shipmentStatus,
 
             @Parameter(description = "조회 시작일(선택), yyyy-MM-dd", example = "2026-02-01")
             @RequestParam(required = false) String from,
@@ -121,6 +123,17 @@ public class InboundController {
             @Min(1) @Max(100)
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(inboundService.listInbounds(storeId, storeKeyword, storeName, storeCode, status, from, to, page, size));
+        return ResponseEntity.ok(inboundService.listInbounds(
+                storeId,
+                storeKeyword,
+                storeName,
+                storeCode,
+                status,
+                shipmentStatus,
+                from,
+                to,
+                page,
+                size
+        ));
     }
 }
