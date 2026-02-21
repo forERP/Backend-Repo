@@ -33,7 +33,9 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private static final String SET_CATEGORY_CODE = "SET";
-    private static final String SET_CATEGORY_NAME = "SET";
+    private static final String SET_CATEGORY_NAME = "세트";
+    private static final String SET_CATEGORY_DESCRIPTION = "세트 메뉴";
+    private static final String SET_CATEGORY_IMAGE_URL = "https://images.pexels.com/photos/54455/cook-food-kitchen-eat-54455.jpeg";
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
@@ -211,21 +213,20 @@ public class ProductService {
     private ProductCategory ensureSetCategory() {
         return categoryRepository.findByCode(SET_CATEGORY_CODE)
                 .map(existing -> {
-                    if (!existing.isActive()) {
-                        existing.update(
-                                existing.getCode(),
-                                existing.getName(),
-                                existing.getDescription(),
-                                existing.getImageUrl(),
-                                true
-                        );
-                    }
+                    existing.update(
+                            SET_CATEGORY_CODE,
+                            SET_CATEGORY_NAME,
+                            SET_CATEGORY_DESCRIPTION,
+                            SET_CATEGORY_IMAGE_URL,
+                            true
+                    );
                     return existing;
                 })
                 .orElseGet(() -> categoryRepository.save(ProductCategory.builder()
                         .code(SET_CATEGORY_CODE)
                         .name(SET_CATEGORY_NAME)
-                        .description("Set menu")
+                        .description(SET_CATEGORY_DESCRIPTION)
+                        .imageUrl(SET_CATEGORY_IMAGE_URL)
                         .active(true)
                         .build()));
     }
