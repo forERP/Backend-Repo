@@ -16,6 +16,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     java.util.List<Product> findByCategory_IdOrderByNameAsc(Long categoryId);
 
+    java.util.List<Product> findByStatusAndCategory_CodeNotOrderByNameAsc(ProductStatus status, String categoryCode);
+
     @Query("""
         select p from Product p
         where (

@@ -1,6 +1,8 @@
 package com.forerp.erp.payment.service;
 
+import com.forerp.erp.product.domain.ProductBundle;
 import com.forerp.erp.product.domain.ProductStatus;
+import com.forerp.erp.product.repository.ProductBundleRepository;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.storeproduct.domain.SaleStatus;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
@@ -12,12 +14,15 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,6 +31,7 @@ public class OrderStockAllocator {
 
     private final WarehouseRepository warehouseRepository;
     private final StoreProductRepository storeProductRepository;
+    private final ProductBundleRepository productBundleRepository;
 
     public AllocationResult allocate(Store store, List<RequestedLine> requestLines) {
         if (requestLines == null || requestLines.isEmpty()) {
@@ -43,14 +49,23 @@ public class OrderStockAllocator {
             throw new IllegalStateException("활성 창고가 없습니다.");
         }
 
-        List<Long> warehouseIds = warehouses.stream().map(Warehouse::getId).toList();
-        List<Long> productIds = deduplicatedLines.stream().map(RequestedLine::productId).distinct().toList();
+        List<Long> requestedProductIds = deduplicatedLines.stream()
+                .map(RequestedLine::productId)
+                .distinct()
+                .toList();
+        Map<Long, ProductBundle> bundleByProductId = findBundleByProductId(requestedProductIds);
 
+        Set<Long> stockProductIds = new LinkedHashSet<>(requestedProductIds);
+        bundleByProductId.values().forEach(bundle ->
+                bundle.getItems().forEach(item -> stockProductIds.add(item.getComponentProduct().getId()))
+        );
+
+        List<Long> warehouseIds = warehouses.stream().map(Warehouse::getId).toList();
         List<StoreProduct> storeProducts = storeProductRepository
                 .findByStore_IdAndWarehouse_IdInAndProduct_IdInAndProduct_Status(
                         store.getId(),
                         warehouseIds,
-                        productIds,
+                        new ArrayList<>(stockProductIds),
                         ProductStatus.ACTIVE
                 );
 
@@ -64,35 +79,90 @@ public class OrderStockAllocator {
         for (Warehouse warehouse : warehouses) {
             Map<Long, StoreProduct> stockByProduct = byWarehouseProduct.getOrDefault(warehouse.getId(), Map.of());
             List<AllocatedLine> allocatedLines = new ArrayList<>();
+            Map<Long, Integer> requiredStockQtyByProductId = new HashMap<>();
             boolean allSatisfied = true;
 
             for (RequestedLine requestLine : deduplicatedLines) {
-                StoreProduct sp = stockByProduct.get(requestLine.productId());
-
-                if (sp == null || sp.getSaleStatus() != SaleStatus.ON || sp.getQuantity() < requestLine.qty()) {
+                StoreProduct orderedStoreProduct = stockByProduct.get(requestLine.productId());
+                if (orderedStoreProduct == null || orderedStoreProduct.getSaleStatus() != SaleStatus.ON) {
                     allSatisfied = false;
                     break;
                 }
 
-                BigDecimal unitPrice = resolveUnitPrice(sp);
+                BigDecimal unitPrice = resolveUnitPrice(orderedStoreProduct);
+                List<StockDeduction> stockDeductions = resolveLineStockDeductions(
+                        requestLine.productId(),
+                        bundleByProductId
+                );
+
+                for (StockDeduction stockDeduction : stockDeductions) {
+                    int requiredQty = stockDeduction.qtyPerUnit() * requestLine.qty();
+                    requiredStockQtyByProductId.merge(stockDeduction.productId(), requiredQty, Integer::sum);
+                }
+
                 allocatedLines.add(new AllocatedLine(
                         requestLine.productId(),
-                        sp.getProduct().getName(),
+                        orderedStoreProduct.getProduct().getName(),
                         requestLine.qty(),
-                        unitPrice
+                        unitPrice,
+                        stockDeductions
                 ));
             }
 
-            if (allSatisfied) {
-                BigDecimal totalAmount = allocatedLines.stream()
-                        .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.qty())))
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                return new AllocationResult(warehouse, allocatedLines, totalAmount);
+            if (!allSatisfied) {
+                continue;
             }
+
+            if (!hasSufficientStock(stockByProduct, requiredStockQtyByProductId)) {
+                continue;
+            }
+
+            BigDecimal totalAmount = allocatedLines.stream()
+                    .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.qty())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            return new AllocationResult(warehouse, allocatedLines, totalAmount);
         }
 
         throw new IllegalStateException("선택 가능한 재고가 없습니다. 모든 창고에서 재고가 부족하거나 판매중지 상태입니다.");
+    }
+
+    private Map<Long, ProductBundle> findBundleByProductId(Collection<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return Map.of();
+        }
+        return productBundleRepository.findByProduct_IdIn(productIds).stream()
+                .collect(Collectors.toMap(bundle -> bundle.getProduct().getId(), bundle -> bundle));
+    }
+
+    private boolean hasSufficientStock(
+            Map<Long, StoreProduct> stockByProduct,
+            Map<Long, Integer> requiredStockQtyByProductId
+    ) {
+        for (Map.Entry<Long, Integer> entry : requiredStockQtyByProductId.entrySet()) {
+            StoreProduct stock = stockByProduct.get(entry.getKey());
+            if (stock == null || stock.getQuantity() < entry.getValue()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<StockDeduction> resolveLineStockDeductions(
+            Long requestedProductId,
+            Map<Long, ProductBundle> bundleByProductId
+    ) {
+        ProductBundle bundle = bundleByProductId.get(requestedProductId);
+        if (bundle == null || bundle.getItems() == null || bundle.getItems().isEmpty()) {
+            return List.of(new StockDeduction(requestedProductId, 1));
+        }
+
+        return bundle.getItems().stream()
+                .map(item -> new StockDeduction(
+                        item.getComponentProduct().getId(),
+                        item.getQuantityPerBundle()
+                ))
+                .toList();
     }
 
     private List<RequestedLine> mergeDuplicatedLines(List<RequestedLine> lines) {
@@ -128,10 +198,24 @@ public class OrderStockAllocator {
         }
     }
 
-    public record AllocatedLine(Long productId, String productName, int qty, BigDecimal unitPrice) {
+    public record StockDeduction(Long productId, int qtyPerUnit) {
+        public StockDeduction {
+            Objects.requireNonNull(productId, "productId는 필수입니다.");
+            if (qtyPerUnit <= 0) {
+                throw new IllegalArgumentException("qtyPerUnit은 1 이상이어야 합니다.");
+            }
+        }
+    }
+
+    public record AllocatedLine(
+            Long productId,
+            String productName,
+            int qty,
+            BigDecimal unitPrice,
+            List<StockDeduction> stockDeductions
+    ) {
     }
 
     public record AllocationResult(Warehouse warehouse, List<AllocatedLine> lines, BigDecimal totalAmount) {
     }
 }
-

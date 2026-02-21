@@ -35,6 +35,22 @@ public class ProductController {
         return ResponseEntity.status(201).body(productService.createProduct(request));
     }
 
+    @Operation(summary = "묶음상품 생성", description = "활성 상품을 구성품으로 선택해 세트(SET) 카테고리 상품을 생성")
+    @ApiResponse(responseCode = "201", description = "Created",
+            content = @Content(schema = @Schema(implementation = ProductBundleCreateResponseDto.class)))
+    @PostMapping("/bundles")
+    public ResponseEntity<ProductBundleCreateResponseDto> createBundleProduct(
+            @Valid @RequestBody ProductBundleCreateRequestDto request
+    ) {
+        return ResponseEntity.status(201).body(productService.createBundleProduct(request));
+    }
+
+    @Operation(summary = "묶음상품 구성 후보 목록", description = "묶음 구성품 선택용 활성 상품 목록 (SET 제외)")
+    @GetMapping("/bundle-candidates")
+    public ResponseEntity<java.util.List<ProductBundleCandidateResponseDto>> getBundleCandidates() {
+        return ResponseEntity.ok(productService.getBundleCandidates());
+    }
+
     @Operation(
             summary = "상품 목록 조회 (페이지네이션)",
             description = "id DESC, page=0, size=20"

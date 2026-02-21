@@ -1,9 +1,20 @@
 package com.forerp.erp.product.service;
 
 import com.forerp.erp.common.query.QueryParamParser;
-import com.forerp.erp.product.domain.*;
-import com.forerp.erp.product.dto.*;
-import com.forerp.erp.product.repository.*;
+import com.forerp.erp.product.domain.Product;
+import com.forerp.erp.product.domain.ProductBundle;
+import com.forerp.erp.product.domain.ProductCategory;
+import com.forerp.erp.product.domain.ProductStatus;
+import com.forerp.erp.product.dto.ProductBundleCandidateResponseDto;
+import com.forerp.erp.product.dto.ProductBundleCreateRequestDto;
+import com.forerp.erp.product.dto.ProductBundleCreateResponseDto;
+import com.forerp.erp.product.dto.ProductCreateRequestDto;
+import com.forerp.erp.product.dto.ProductCreateResponseDto;
+import com.forerp.erp.product.dto.ProductDto;
+import com.forerp.erp.product.dto.ProductListResponseDto;
+import com.forerp.erp.product.repository.ProductBundleRepository;
+import com.forerp.erp.product.repository.ProductCategoryRepository;
+import com.forerp.erp.product.repository.ProductRepository;
 import com.forerp.erp.storeproduct.service.StoreProductSyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,46 +23,125 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Year;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final String SET_CATEGORY_CODE = "SET";
+    private static final String SET_CATEGORY_NAME = "SET";
+
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
+    private final ProductBundleRepository productBundleRepository;
     private final StoreProductSyncService storeProductSyncService;
 
     @Transactional
     public ProductCreateResponseDto createProduct(ProductCreateRequestDto request) {
-
         ProductCategory category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리"));
+                .orElseThrow(() -> new IllegalArgumentException("議댁옱?섏? ?딅뒗 移댄뀒怨좊━?낅땲??"));
 
-        // 1. 임시 SKU로 먼저 저장 (ID 확보)
-        Product prd = Product.builder()
+        Product product = Product.builder()
                 .name(request.getName())
                 .category(category)
-                .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
+                .description(trimToNull(request.getDescription()))
+                .imageUrl(trimToNull(request.getImageUrl()))
                 .msrpPrice(request.getPrice())
                 .status(ProductStatus.ACTIVE)
-                .sku("TEMP")  // 임시값
+                .sku("TEMP")
                 .build();
 
-        productRepository.save(prd);
+        productRepository.save(product);
 
-        // 2. 아이디 값을 반영하여 실제 SKU 생성 및 저장
-        String sku = String.format("PRD%d%06d", Year.now().getValue(), prd.getId());
-        prd.updateSku(sku);
-        productRepository.save(prd);
-        storeProductSyncService.syncActiveProductToActiveWarehouses(prd);
+        String sku = generateSku(product.getId());
+        product.updateSku(sku);
+        productRepository.save(product);
+        storeProductSyncService.syncActiveProductToActiveWarehouses(product);
 
-        return new ProductCreateResponseDto(prd.getId(), sku);
+        return new ProductCreateResponseDto(product.getId(), sku);
     }
 
-    // 관리자용 상품 목록 단순 조회
+    @Transactional
+    public ProductBundleCreateResponseDto createBundleProduct(ProductBundleCreateRequestDto request) {
+        Map<Long, Integer> componentQtyByProductId = normalizeBundleItems(request.getItems());
+        List<Product> componentProducts = productRepository.findAllById(componentQtyByProductId.keySet());
+
+        if (componentProducts.size() != componentQtyByProductId.size()) {
+            throw new IllegalArgumentException("臾띠쓬?곹뭹 援ъ꽦??以?議댁옱?섏? ?딅뒗 ?곹뭹???덉뒿?덈떎.");
+        }
+
+        Map<Long, Product> componentById = componentProducts.stream()
+                .collect(Collectors.toMap(Product::getId, product -> product));
+
+        for (Product component : componentProducts) {
+            if (component.getStatus() != ProductStatus.ACTIVE) {
+                throw new IllegalArgumentException("?쒖꽦 ?곹깭???곹뭹留?援ъ꽦?덉쑝濡??좏깮?????덉뒿?덈떎.");
+            }
+            if (component.getCategory() != null
+                    && SET_CATEGORY_CODE.equalsIgnoreCase(component.getCategory().getCode())) {
+                throw new IllegalArgumentException("?명듃 ?곹뭹? 臾띠쓬 援ъ꽦?덉쑝濡??ъ슜?????놁뒿?덈떎.");
+            }
+        }
+
+        ProductCategory setCategory = ensureSetCategory();
+
+        Product setProduct = Product.builder()
+                .name(request.getName().trim())
+                .category(setCategory)
+                .description(trimToNull(request.getDescription()))
+                .imageUrl(trimToNull(request.getImageUrl()))
+                .msrpPrice(request.getSetPrice())
+                .status(ProductStatus.ACTIVE)
+                .sku("TEMP")
+                .build();
+
+        productRepository.save(setProduct);
+
+        String sku = generateSku(setProduct.getId());
+        setProduct.updateSku(sku);
+        productRepository.save(setProduct);
+
+        ProductBundle bundle = ProductBundle.create(setProduct, request.getDiscountRate());
+        componentQtyByProductId.forEach((productId, quantity) -> {
+            Product component = componentById.get(productId);
+            bundle.addItem(component, quantity);
+        });
+        productBundleRepository.save(bundle);
+
+        storeProductSyncService.syncActiveProductToActiveWarehouses(setProduct);
+
+        return new ProductBundleCreateResponseDto(bundle.getId(), setProduct.getId(), sku);
+    }
+
     @Transactional(readOnly = true)
-    public Page<ProductListResponseDto> getAllProducts(String productKeyword, String name, String sku, String status, Pageable pageable){
+    public List<ProductBundleCandidateResponseDto> getBundleCandidates() {
+        return productRepository
+                .findByStatusAndCategory_CodeNotOrderByNameAsc(ProductStatus.ACTIVE, SET_CATEGORY_CODE)
+                .stream()
+                .map(product -> new ProductBundleCandidateResponseDto(
+                        product.getId(),
+                        product.getSku(),
+                        product.getName(),
+                        product.getCategory() == null ? null : product.getCategory().getCode(),
+                        product.getCategory() == null ? null : product.getCategory().getName(),
+                        product.getMsrpPrice(),
+                        product.getImageUrl()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductListResponseDto> getAllProducts(
+            String productKeyword,
+            String name,
+            String sku,
+            String status,
+            Pageable pageable
+    ) {
         ProductStatus productStatus = QueryParamParser.parseEnumOrNull(status, ProductStatus.class, "status");
 
         return productRepository.search(normalize(productKeyword), normalize(name), normalize(sku), productStatus, pageable)
@@ -65,33 +155,28 @@ public class ProductService {
                 ));
     }
 
-    private String normalize(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    // 단건 조회
     @Transactional(readOnly = true)
-    public ProductDto.DetailResponse getProduct(Long id){
+    public ProductDto.DetailResponse getProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("?곹뭹??李얠쓣 ???놁뒿?덈떎."));
         return new ProductDto.DetailResponse(product);
     }
 
-    // 상품 수정
     @Transactional
-    public ProductDto.DetailResponse updateProduct(Long id, ProductDto.UpdateRequest request){
+    public ProductDto.DetailResponse updateProduct(Long id, ProductDto.UpdateRequest request) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("?곹뭹??李얠쓣 ???놁뒿?덈떎."));
 
-        // 카테고리 변경 시 조회
+        if (productBundleRepository.existsByProduct_Id(product.getId())
+                && request.getCategoryId() != null
+                && !request.getCategoryId().equals(product.getCategory().getId())) {
+            throw new IllegalArgumentException("臾띠쓬?곹뭹??移댄뀒怨좊━???명듃(SET)濡?怨좎젙?⑸땲??");
+        }
+
         ProductCategory category = null;
-        if(request.getCategoryId() != null){
+        if (request.getCategoryId() != null) {
             category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리"));
+                    .orElseThrow(() -> new IllegalArgumentException("議댁옱?섏? ?딅뒗 移댄뀒怨좊━?낅땲??"));
         }
 
         product.update(
@@ -105,23 +190,74 @@ public class ProductService {
         return new ProductDto.DetailResponse(product);
     }
 
-    // 상품 단종 처리
     @Transactional
-    public void discontinueProduct(Long id){
+    public void discontinueProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("?곹뭹??李얠쓣 ???놁뒿?덈떎."));
         product.discontinue();
     }
 
-    // 상품 재등록 (단종 취소)
     @Transactional
-    public void reactivateProduct(Long id){
+    public void reactivateProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
-        if(product.getStatus() != ProductStatus.DISCONTINUED){
-            throw new IllegalArgumentException("단종 처리된 상품만 재등록할 수 있습니다.");
+                .orElseThrow(() -> new IllegalArgumentException("?곹뭹??李얠쓣 ???놁뒿?덈떎."));
+        if (product.getStatus() != ProductStatus.DISCONTINUED) {
+            throw new IllegalArgumentException("?먮ℓ 以묒? 泥섎━???곹뭹留??ы뙋留ㅽ븷 ???덉뒿?덈떎.");
         }
         product.reactivate();
         storeProductSyncService.syncActiveProductToActiveWarehouses(product);
+    }
+
+    private ProductCategory ensureSetCategory() {
+        return categoryRepository.findByCode(SET_CATEGORY_CODE)
+                .map(existing -> {
+                    if (!existing.isActive()) {
+                        existing.update(
+                                existing.getCode(),
+                                existing.getName(),
+                                existing.getDescription(),
+                                existing.getImageUrl(),
+                                true
+                        );
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> categoryRepository.save(ProductCategory.builder()
+                        .code(SET_CATEGORY_CODE)
+                        .name(SET_CATEGORY_NAME)
+                        .description("Set menu")
+                        .active(true)
+                        .build()));
+    }
+
+    private Map<Long, Integer> normalizeBundleItems(List<ProductBundleCreateRequestDto.BundleItem> items) {
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("臾띠쓬?곹뭹 援ъ꽦?덉? 理쒖냼 1媛??댁긽?댁뼱???⑸땲??");
+        }
+
+        Map<Long, Integer> merged = new LinkedHashMap<>();
+        for (ProductBundleCreateRequestDto.BundleItem item : items) {
+            if (item.getProductId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
+                throw new IllegalArgumentException("援ъ꽦???뺣낫媛 ?щ컮瑜댁? ?딆뒿?덈떎.");
+            }
+            merged.merge(item.getProductId(), item.getQuantity(), Integer::sum);
+        }
+        return merged;
+    }
+
+    private String generateSku(Long productId) {
+        return String.format("PRD%d%06d", Year.now().getValue(), productId);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String trimToNull(String value) {
+        return normalize(value);
     }
 }

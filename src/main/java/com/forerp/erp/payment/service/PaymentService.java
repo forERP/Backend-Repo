@@ -8,8 +8,10 @@ import com.forerp.erp.inventory.domain.RefType;
 import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
 import com.forerp.erp.order.domain.Order;
 import com.forerp.erp.order.domain.OrderItem;
+import com.forerp.erp.order.domain.OrderItemComponent;
 import com.forerp.erp.order.domain.OrderStatus;
 import com.forerp.erp.order.dto.OrderResponse;
+import com.forerp.erp.order.repository.OrderItemComponentRepository;
 import com.forerp.erp.order.repository.OrderRepository;
 import com.forerp.erp.outbound.domain.Outbound;
 import com.forerp.erp.outbound.domain.OutboundItem;
@@ -29,7 +31,9 @@ import com.forerp.erp.payment.dto.PaymentPrepareResponse;
 import com.forerp.erp.payment.dto.PaymentSummaryResponse;
 import com.forerp.erp.payment.repository.PaymentCancelRepository;
 import com.forerp.erp.payment.repository.PaymentRepository;
+import com.forerp.erp.product.domain.ProductBundle;
 import com.forerp.erp.product.domain.Product;
+import com.forerp.erp.product.repository.ProductBundleRepository;
 import com.forerp.erp.product.repository.ProductRepository;
 import com.forerp.erp.realtime.service.RealtimeEventService;
 import com.forerp.erp.store.domain.Store;
@@ -53,6 +57,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -67,8 +72,10 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentCancelRepository paymentCancelRepository;
     private final OrderRepository orderRepository;
+    private final OrderItemComponentRepository orderItemComponentRepository;
     private final OutboundRepository outboundRepository;
     private final ProductRepository productRepository;
+    private final ProductBundleRepository productBundleRepository;
     private final WarehouseRepository warehouseRepository;
     private final StoreProductRepository storeProductRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
@@ -121,7 +128,7 @@ public class PaymentService {
 
     public PaymentConfirmResponse confirm(User actor, PaymentConfirmRequest request) {
         Payment payment = paymentRepository.findByMerchantOrderId(request.getMerchantOrderId())
-                .orElseThrow(() -> new IllegalArgumentException("결제 준비 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("?롪퍒???繞벿뮻???筌먲퐢沅??嶺뚢돦堉??????怨룸????덈펲."));
         verifyPaymentAccess(payment, actor);
 
         if (payment.getStatus() == PaymentStatus.DONE) {
@@ -139,11 +146,11 @@ public class PaymentService {
         }
 
         if (payment.getStatus() != PaymentStatus.READY && payment.getStatus() != PaymentStatus.FAILED) {
-            throw new IllegalStateException("승인 가능한 결제 상태가 아닙니다. status=" + payment.getStatus());
+            throw new IllegalStateException("?獄????띠럾??繞③뇡??롪퍒?????⑤객臾뜻뤆?쎛 ?熬곣뫀六???덈펲. status=" + payment.getStatus());
         }
 
         if (payment.getAmount().compareTo(request.getAmount()) != 0) {
-            throw new IllegalArgumentException("결제 금액이 일치하지 않습니다.");
+            throw new IllegalArgumentException("?롪퍒????ル?녽뇡????源딅뭵??? ???용????덈펲.");
         }
 
         JsonNode confirmResult = tossPaymentsClient.confirm(
@@ -158,11 +165,11 @@ public class PaymentService {
         } catch (Exception ex) {
             JsonNode cancelResult = tossPaymentsClient.cancel(
                     request.getPaymentKey(),
-                    "재고 변동으로 주문 생성에 실패하여 자동 취소되었습니다.",
+                    "?????곌떠????됰さ???낅슣?뽪룇 ??諛댁뎽?????덉넮??琉우뿰 ???吏????쳛???琉????鍮??",
                     request.getAmount()
             );
             payment.markCanceled(request.getAmount(), text(cancelResult, "status"), cancelResult.toString());
-            throw new IllegalStateException("결제는 승인되었지만 재고 사정으로 주문 생성에 실패하여 자동 취소되었습니다.", ex);
+            throw new IllegalStateException("?롪퍒?????獄????琉?嶺뚯솘?嶺??????????怨쀬Ŧ ?낅슣?뽪룇 ??諛댁뎽?????덉넮??琉우뿰 ???吏????쳛???琉????鍮??", ex);
         }
 
         payment.markDone(
@@ -201,20 +208,20 @@ public class PaymentService {
             boolean fromReturnProcess
     ) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new IllegalArgumentException("결제를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("?롪퍒??節뉖ご?嶺뚢돦堉??????怨룸????덈펲."));
         verifyPaymentAccess(payment, actor);
 
         if (payment.getPaymentKey() == null || payment.getPaymentKey().isBlank()) {
-            throw new IllegalStateException("아직 승인되지 않은 결제입니다.");
+            throw new IllegalStateException("?熬곣뫗異??獄????? ??? ?롪퍒?????낅퉵??");
         }
 
         if (payment.getOrder() == null) {
-            throw new IllegalStateException("연결된 주문 정보가 없습니다.");
+            throw new IllegalStateException("??⑤슡????낅슣?뽪룇 ?筌먲퐢沅뽪뤆?쎛 ??怨룸????덈펲.");
         }
 
         Order order = payment.getOrder();
         if (order.getStatus() == OrderStatus.CANCELED) {
-            throw new IllegalStateException("이미 취소된 주문입니다.");
+            throw new IllegalStateException("???? ???쳛????낅슣?뽪룇???낅퉵??");
         }
 
         Map<Long, Integer> cancelMap = normalizeCancelItems(request, order);
@@ -223,10 +230,10 @@ public class PaymentService {
 
         BigDecimal cancelAmount = computeCancelAmount(order, cancelMap);
         if (cancelAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("취소 금액이 0 이하입니다.");
+            throw new IllegalArgumentException("???쳛???ル?녽뇡??0 ??袁⑤┃???낅퉵??");
         }
         if (payment.getRemainingCancelableAmount().compareTo(cancelAmount) < 0) {
-            throw new IllegalStateException("취소 가능 금액을 초과했습니다.");
+            throw new IllegalStateException("???쳛???띠럾????ル?녽뇡???貫?????곕????덈펲.");
         }
 
         Outbound outbound = outboundRepository.findByOrder_Id(order.getId()).orElse(null);
@@ -265,7 +272,7 @@ public class PaymentService {
             }
             order.markCanceledByRefund();
         } else {
-            throw new IllegalStateException("지원하지 않는 주문 상태입니다. status=" + order.getStatus());
+            throw new IllegalStateException("嶺뚯솘???믨퀡由?춯?뼿 ???낅츎 ?낅슣?뽪룇 ??⑤객臾???낅퉵?? status=" + order.getStatus());
         }
 
         payment.markCanceled(cancelAmount, text(cancelResult, "status"), cancelResult.toString());
@@ -299,7 +306,7 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentSummaryResponse get(User actor, Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new IllegalArgumentException("결제를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("?롪퍒??節뉖ご?嶺뚢돦堉??????怨룸????덈펲."));
         verifyPaymentAccess(payment, actor);
         return PaymentSummaryResponse.from(payment);
     }
@@ -307,7 +314,7 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentSummaryResponse getByOrderId(User actor, Long orderId) {
         Payment payment = paymentRepository.findByOrder_Id(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문에 연결된 결제를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("?낅슣?뽪룇????⑤슡????롪퍒??節뉖ご?嶺뚢돦堉??????怨룸????덈펲."));
         verifyPaymentAccess(payment, actor);
         return PaymentSummaryResponse.from(payment);
     }
@@ -353,7 +360,7 @@ public class PaymentService {
         try {
             payload = objectMapper.readTree(body);
         } catch (Exception ex) {
-            throw new IllegalArgumentException("웹훅 payload 파싱에 실패했습니다.");
+            throw new IllegalArgumentException("?獄?낯??payload ???堉?????덉넮???곕????덈펲.");
         }
 
         String eventType = text(payload, "eventType");
@@ -410,22 +417,43 @@ public class PaymentService {
         List<OrderSnapshotLine> snapshotLines = readOrderSnapshot(payment.getOrderSnapshot());
         Warehouse warehouse = resolveWarehouseAtConfirm(payment.getStore(), payment.getWarehouse(), snapshotLines);
 
-        Map<Long, Product> productMap = productRepository.findAllById(
-                        snapshotLines.stream().map(OrderSnapshotLine::productId).toList()
-                ).stream()
-                .collect(Collectors.toMap(Product::getId, product -> product));
+        Set<Long> orderedProductIds = snapshotLines.stream()
+                .map(OrderSnapshotLine::productId)
+                .collect(Collectors.toSet());
+        Map<Long, ProductBundle> bundleByProductId = findBundlesByProductIds(orderedProductIds);
 
+        Set<Long> relatedProductIds = snapshotLines.stream()
+                .flatMap(line -> resolveSnapshotDeductions(line, bundleByProductId).stream())
+                .map(OrderSnapshotStockDeduction::productId)
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+        relatedProductIds.addAll(orderedProductIds);
+
+        Map<Long, Product> productMap = productRepository.findAllById(relatedProductIds).stream()
+                .collect(Collectors.toMap(Product::getId, product -> product));
         List<OrderItem> orderItems = snapshotLines.stream()
                 .map(line -> {
                     Product product = productMap.get(line.productId());
                     if (product == null) {
                         throw new IllegalStateException("상품을 찾을 수 없습니다. productId=" + line.productId());
                     }
-                    return OrderItem.create(product, line.qty(), line.unitPrice());
+                    OrderItem orderItem = OrderItem.create(product, line.qty(), line.unitPrice());
+                    List<OrderSnapshotStockDeduction> stockDeductions = resolveSnapshotDeductions(line, bundleByProductId);
+                    for (OrderSnapshotStockDeduction stockDeduction : stockDeductions) {
+                        Product componentProduct = productMap.get(stockDeduction.productId());
+                        if (componentProduct == null) {
+                            throw new IllegalStateException("구성 상품을 찾을 수 없습니다. productId=" + stockDeduction.productId());
+                        }
+                        orderItem.addComponent(componentProduct, stockDeduction.qtyPerUnit());
+                    }
+                    return orderItem;
                 })
                 .toList();
 
-        Order order = Order.create(payment.getStore(), warehouse, orderItems);
+        Order order = Order.create(
+                payment.getStore(),
+                warehouse,
+                orderItems
+        );
         orderRepository.save(order);
 
         payment.assignWarehouse(warehouse);
@@ -441,7 +469,7 @@ public class PaymentService {
                 .toList();
 
         if (warehouses.isEmpty()) {
-            throw new IllegalStateException("활성 창고가 없습니다.");
+            throw new IllegalStateException("??뽮쉐 筌≪럡?у첎? ??곷뮸??덈뼄.");
         }
 
         List<Warehouse> candidates = new ArrayList<>();
@@ -454,17 +482,25 @@ public class PaymentService {
             }
         }
 
-        List<Long> productIds = lines.stream().map(OrderSnapshotLine::productId).toList();
+        Set<Long> orderedProductIds = lines.stream()
+                .map(OrderSnapshotLine::productId)
+                .collect(Collectors.toSet());
+        Map<Long, ProductBundle> bundleByProductId = findBundlesByProductIds(orderedProductIds);
+
+        Set<Long> stockProductIds = new java.util.LinkedHashSet<>(orderedProductIds);
+        lines.forEach(line -> resolveSnapshotDeductions(line, bundleByProductId)
+                .forEach(stockDeduction -> stockProductIds.add(stockDeduction.productId())));
 
         for (Warehouse candidate : candidates) {
             List<StoreProduct> stockList = storeProductRepository.findByStore_IdAndWarehouse_IdAndProduct_IdIn(
                     store.getId(),
                     candidate.getId(),
-                    productIds
+                    new ArrayList<>(stockProductIds)
             );
             Map<Long, StoreProduct> stockMap = stockList.stream()
                     .collect(Collectors.toMap(sp -> sp.getProduct().getId(), sp -> sp));
 
+            Map<Long, Integer> requiredStockQtyByProductId = new HashMap<>();
             boolean match = true;
             for (OrderSnapshotLine line : lines) {
                 StoreProduct sp = stockMap.get(line.productId());
@@ -472,23 +508,70 @@ public class PaymentService {
                     match = false;
                     break;
                 }
-                if (sp.getQuantity() < line.qty()) {
-                    match = false;
-                    break;
-                }
+
                 BigDecimal currentPrice = resolveUnitPrice(sp);
                 if (currentPrice.compareTo(line.unitPrice()) != 0) {
                     match = false;
                     break;
                 }
+
+                List<OrderSnapshotStockDeduction> stockDeductions = resolveSnapshotDeductions(line, bundleByProductId);
+                for (OrderSnapshotStockDeduction stockDeduction : stockDeductions) {
+                    int requiredQty = stockDeduction.qtyPerUnit() * line.qty();
+                    requiredStockQtyByProductId.merge(stockDeduction.productId(), requiredQty, Integer::sum);
+                }
             }
 
-            if (match) {
+            if (match && hasSufficientStock(stockMap, requiredStockQtyByProductId)) {
                 return candidate;
             }
         }
 
-        throw new IllegalStateException("결제 금액과 일치하는 재고를 확보할 수 없습니다.");
+        throw new IllegalStateException("野껉퀣??疫뀀뜆釉멩???깊뒄??롫뮉 ???х몴?筌≪뼚??????곷뮸??덈뼄.");
+    }
+
+    private Map<Long, ProductBundle> findBundlesByProductIds(Set<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return Map.of();
+        }
+        return productBundleRepository.findByProduct_IdIn(productIds).stream()
+                .collect(Collectors.toMap(bundle -> bundle.getProduct().getId(), bundle -> bundle));
+    }
+
+    private List<OrderSnapshotStockDeduction> resolveSnapshotDeductions(
+            OrderSnapshotLine line,
+            Map<Long, ProductBundle> bundleByProductId
+    ) {
+        if (line.stockDeductions() != null && !line.stockDeductions().isEmpty()) {
+            return line.stockDeductions().stream()
+                    .filter(deduction -> deduction.productId() != null && deduction.qtyPerUnit() > 0)
+                    .toList();
+        }
+
+        ProductBundle bundle = bundleByProductId.get(line.productId());
+        if (bundle != null && bundle.getItems() != null && !bundle.getItems().isEmpty()) {
+            return bundle.getItems().stream()
+                    .map(item -> new OrderSnapshotStockDeduction(
+                            item.getComponentProduct().getId(),
+                            item.getQuantityPerBundle()
+                    ))
+                    .toList();
+        }
+
+        return List.of(new OrderSnapshotStockDeduction(line.productId(), 1));
+    }
+
+    private boolean hasSufficientStock(
+            Map<Long, StoreProduct> stockMap,
+            Map<Long, Integer> requiredStockQtyByProductId
+    ) {
+        for (Map.Entry<Long, Integer> entry : requiredStockQtyByProductId.entrySet()) {
+            StoreProduct stock = stockMap.get(entry.getKey());
+            if (stock == null || stock.getQuantity() < entry.getValue()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private BigDecimal resolveUnitPrice(StoreProduct sp) {
@@ -512,24 +595,8 @@ public class PaymentService {
         }
 
         if (order.getStatus() == OrderStatus.PLACED) {
-            for (Map.Entry<Long, Integer> entry : cancelMap.entrySet()) {
-                OrderItem orderItem = order.getItems().stream()
-                        .filter(item -> item.getId().equals(entry.getKey()))
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("주문 항목을 찾을 수 없습니다."));
-
-                StoreProduct sp = storeProductRepository
-                        .findByStore_IdAndWarehouse_IdAndProduct_Id(
-                                order.getStore().getId(),
-                                order.getWarehouse().getId(),
-                                orderItem.getProduct().getId()
-                        )
-                        .orElseThrow(() -> new IllegalStateException("재고 정보를 찾을 수 없습니다."));
-
-                if (sp.getQuantity() < entry.getValue()) {
-                    throw new IllegalStateException("폐기 처리할 재고가 부족합니다.");
-                }
-            }
+            Map<Long, Integer> requiredQtyByProductId = resolveRequiredComponentQty(order, cancelMap);
+            validateStockAvailability(order, requiredQtyByProductId);
             return;
         }
 
@@ -540,25 +607,15 @@ public class PaymentService {
         if (outbound != null) {
             for (OutboundItem item : outbound.getItems()) {
                 if (item.getStoreProduct().getQuantity() < item.getQuantity()) {
-                    throw new IllegalStateException("폐기 처리할 재고가 부족합니다.");
+                    throw new IllegalStateException("?癒?┛ 筌ｌ꼶??????у첎? ?봔鈺곌퉲鍮??덈뼄.");
                 }
             }
             return;
         }
 
-        for (OrderItem orderItem : order.getItems()) {
-            StoreProduct sp = storeProductRepository
-                    .findByStore_IdAndWarehouse_IdAndProduct_Id(
-                            order.getStore().getId(),
-                            order.getWarehouse().getId(),
-                            orderItem.getProduct().getId()
-                    )
-                    .orElseThrow(() -> new IllegalStateException("재고 정보를 찾을 수 없습니다."));
-
-            if (sp.getQuantity() < orderItem.getQuantity()) {
-                throw new IllegalStateException("폐기 처리할 재고가 부족합니다.");
-            }
-        }
+        Map<Long, Integer> fullOrderItemQtyMap = buildOrderItemQtyMap(order.getItems());
+        Map<Long, Integer> requiredQtyByProductId = resolveRequiredComponentQty(order, fullOrderItemQtyMap);
+        validateStockAvailability(order, requiredQtyByProductId);
     }
 
     private void applyDiscardStock(Order order, Outbound outbound, User actor) {
@@ -576,46 +633,100 @@ public class PaymentService {
             return;
         }
 
-        for (OrderItem orderItem : order.getItems()) {
-            StoreProduct sp = storeProductRepository
-                    .findByStore_IdAndWarehouse_IdAndProduct_Id(
-                            order.getStore().getId(),
-                            order.getWarehouse().getId(),
-                            orderItem.getProduct().getId()
-                    )
-                    .orElseThrow(() -> new IllegalStateException("재고 정보를 찾을 수 없습니다."));
-
-            InventoryHistory history = sp.decreaseStock(
-                    orderItem.getQuantity(),
-                    RefType.DISCARD,
-                    order.getId(),
-                    orderItem.getId(),
-                    actor
-            );
-            inventoryHistoryRepository.save(history);
-        }
+        Map<Long, Integer> requiredQtyByProductId = resolveRequiredComponentQty(
+                order,
+                buildOrderItemQtyMap(order.getItems())
+        );
+        applyDiscardStockByRequirement(order, requiredQtyByProductId, actor);
     }
 
     private void applyDiscardStockForPlaced(Order order, Map<Long, Integer> cancelMap, User actor) {
-        for (Map.Entry<Long, Integer> entry : cancelMap.entrySet()) {
-            OrderItem orderItem = order.getItems().stream()
-                    .filter(item -> item.getId().equals(entry.getKey()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("주문 항목을 찾을 수 없습니다."));
+        Map<Long, Integer> requiredQtyByProductId = resolveRequiredComponentQty(order, cancelMap);
+        applyDiscardStockByRequirement(order, requiredQtyByProductId, actor);
+    }
 
-            StoreProduct sp = storeProductRepository
+    private Map<Long, Integer> buildOrderItemQtyMap(List<OrderItem> orderItems) {
+        Map<Long, Integer> orderItemQtyMap = new LinkedHashMap<>();
+        for (OrderItem orderItem : orderItems) {
+            orderItemQtyMap.put(orderItem.getId(), orderItem.getQuantity());
+        }
+        return orderItemQtyMap;
+    }
+
+    private Map<Long, Integer> resolveRequiredComponentQty(Order order, Map<Long, Integer> orderItemQtyMap) {
+        if (orderItemQtyMap == null || orderItemQtyMap.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, OrderItem> orderItemById = order.getItems().stream()
+                .collect(Collectors.toMap(OrderItem::getId, item -> item));
+
+        List<OrderItemComponent> orderItemComponents = orderItemComponentRepository
+                .findByOrderItem_IdIn(orderItemQtyMap.keySet());
+        Map<Long, List<OrderItemComponent>> componentsByOrderItemId = orderItemComponents.stream()
+                .collect(Collectors.groupingBy(component -> component.getOrderItem().getId()));
+
+        Map<Long, Integer> requiredQtyByProductId = new LinkedHashMap<>();
+
+        for (Map.Entry<Long, Integer> entry : orderItemQtyMap.entrySet()) {
+            Long orderItemId = entry.getKey();
+            Integer orderItemQty = entry.getValue();
+
+            OrderItem orderItem = orderItemById.get(orderItemId);
+            if (orderItem == null) {
+                throw new IllegalStateException("雅뚯눖揆 ?????筌≪뼚??????곷뮸??덈뼄. orderItemId=" + orderItemId);
+            }
+
+            if (orderItemQty == null || orderItemQty <= 0) {
+                continue;
+            }
+
+            List<OrderItemComponent> components = componentsByOrderItemId.get(orderItemId);
+            if (components == null || components.isEmpty()) {
+                requiredQtyByProductId.merge(orderItem.getProduct().getId(), orderItemQty, Integer::sum);
+                continue;
+            }
+
+            for (OrderItemComponent component : components) {
+                int requiredQty = orderItemQty * component.getQuantityPerOrderItem();
+                requiredQtyByProductId.merge(component.getComponentProduct().getId(), requiredQty, Integer::sum);
+            }
+        }
+
+        return requiredQtyByProductId;
+    }
+
+    private void validateStockAvailability(Order order, Map<Long, Integer> requiredQtyByProductId) {
+        for (Map.Entry<Long, Integer> entry : requiredQtyByProductId.entrySet()) {
+            StoreProduct stock = storeProductRepository
                     .findByStore_IdAndWarehouse_IdAndProduct_Id(
                             order.getStore().getId(),
                             order.getWarehouse().getId(),
-                            orderItem.getProduct().getId()
+                            entry.getKey()
                     )
-                    .orElseThrow(() -> new IllegalStateException("재고 정보를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new IllegalStateException("?????類ｋ궖??筌≪뼚??????곷뮸??덈뼄. productId=" + entry.getKey()));
 
-            InventoryHistory history = sp.decreaseStock(
+            if (stock.getQuantity() < entry.getValue()) {
+                throw new IllegalStateException("?癒?┛ 筌ｌ꼶??????у첎? ?봔鈺곌퉲鍮??덈뼄.");
+            }
+        }
+    }
+
+    private void applyDiscardStockByRequirement(Order order, Map<Long, Integer> requiredQtyByProductId, User actor) {
+        for (Map.Entry<Long, Integer> entry : requiredQtyByProductId.entrySet()) {
+            StoreProduct stock = storeProductRepository
+                    .findByStore_IdAndWarehouse_IdAndProduct_Id(
+                            order.getStore().getId(),
+                            order.getWarehouse().getId(),
+                            entry.getKey()
+                    )
+                    .orElseThrow(() -> new IllegalStateException("?????類ｋ궖??筌≪뼚??????곷뮸??덈뼄. productId=" + entry.getKey()));
+
+            InventoryHistory history = stock.decreaseStock(
                     entry.getValue(),
                     RefType.DISCARD,
                     order.getId(),
-                    orderItem.getId(),
+                    null,
                     actor
             );
             inventoryHistoryRepository.save(history);
@@ -624,10 +735,10 @@ public class PaymentService {
 
     private void applyReturnStock(Order order, Outbound outbound, User actor) {
         if (outbound == null) {
-            throw new IllegalStateException("출고 정보가 없어 재고 복원 처리를 할 수 없습니다.");
+            throw new IllegalStateException("?怨쀫츇???筌먲퐢沅뽪뤆?쎛 ??怨룹꽑 ?????곌랜踰??嶺뚳퐣瑗?怨?ご???????怨룸????덈펲.");
         }
         if (!(outbound.getStatus() == OutboundStatus.CONFIRMED || outbound.getStatus() == OutboundStatus.ARRIVED)) {
-            throw new IllegalStateException("재고 복원은 출고 확정 이후 상태에서만 가능합니다.");
+            throw new IllegalStateException("?????곌랜踰??? ?怨쀫츇???筌먦끉????袁⑸쐩 ??⑤객臾????ｇ춯??띠럾??繞③뜮????덈펲.");
         }
 
         for (OutboundItem item : outbound.getItems()) {
@@ -658,12 +769,12 @@ public class PaymentService {
         for (PaymentCancelRequest.PaymentCancelItem item : request.getItems()) {
             Integer orderedQty = orderedQtyByItemId.get(item.getOrderItemId());
             if (orderedQty == null) {
-                throw new IllegalArgumentException("주문 항목을 찾을 수 없습니다. orderItemId=" + item.getOrderItemId());
+                throw new IllegalArgumentException("?낅슣?뽪룇 ?????嶺뚢돦堉??????怨룸????덈펲. orderItemId=" + item.getOrderItemId());
             }
 
             int mergedQty = normalized.getOrDefault(item.getOrderItemId(), 0) + item.getQty();
             if (mergedQty > orderedQty) {
-                throw new IllegalArgumentException("취소 수량이 주문 수량을 초과했습니다. orderItemId=" + item.getOrderItemId());
+                throw new IllegalArgumentException("???쳛????濡?럸???낅슣?뽪룇 ??濡?럸???貫?????곕????덈펲. orderItemId=" + item.getOrderItemId());
             }
             normalized.put(item.getOrderItemId(), mergedQty);
         }
@@ -691,7 +802,7 @@ public class PaymentService {
         }
 
         if (!fullCancel) {
-            throw new IllegalStateException("부분 취소는 PLACED 상태에서만 가능합니다.");
+            throw new IllegalStateException("?遊붋?????쳛???PLACED ??⑤객臾????ｇ춯??띠럾??繞③뜮????덈펲.");
         }
 
         if (orderStatus == OrderStatus.PREPARED) {
@@ -702,10 +813,10 @@ public class PaymentService {
             if (fromReturnProcess) {
                 return;
             }
-            throw new IllegalStateException("출고 이후 주문은 반품 API를 사용해 주세요.");
+            throw new IllegalStateException("?怨쀫츇????袁⑸쐩 ?낅슣?뽪룇?? ?꾩룇瑗배맱?API????????낅슣?섋땻??");
         }
 
-        throw new IllegalStateException("취소 가능한 주문 상태가 아닙니다. status=" + orderStatus);
+        throw new IllegalStateException("???쳛???띠럾??繞③뇡??낅슣?뽪룇 ??⑤객臾뜻뤆?쎛 ?熬곣뫀六???덈펲. status=" + orderStatus);
     }
 
     private BigDecimal computeCancelAmount(Order order, Map<Long, Integer> cancelMap) {
@@ -723,11 +834,23 @@ public class PaymentService {
     private String writeOrderSnapshot(List<OrderStockAllocator.AllocatedLine> lines) {
         try {
             List<OrderSnapshotLine> snapshotLines = lines.stream()
-                    .map(line -> new OrderSnapshotLine(line.productId(), line.qty(), line.unitPrice()))
+                    .map(line -> new OrderSnapshotLine(
+                            line.productId(),
+                            line.qty(),
+                            line.unitPrice(),
+                            line.stockDeductions() == null
+                                    ? List.of()
+                                    : line.stockDeductions().stream()
+                                    .map(deduction -> new OrderSnapshotStockDeduction(
+                                            deduction.productId(),
+                                            deduction.qtyPerUnit()
+                                    ))
+                                    .toList()
+                    ))
                     .toList();
             return objectMapper.writeValueAsString(snapshotLines);
         } catch (Exception ex) {
-            throw new IllegalStateException("주문 스냅샷 직렬화에 실패했습니다.", ex);
+            throw new IllegalStateException("?낅슣?뽪룇 ???고돩??嶺뚯쉳????븐슜?????덉넮???곕????덈펲.", ex);
         }
     }
 
@@ -735,20 +858,20 @@ public class PaymentService {
         try {
             return objectMapper.readValue(snapshot, SNAPSHOT_LINE_LIST_TYPE);
         } catch (Exception ex) {
-            throw new IllegalStateException("주문 스냅샷 파싱에 실패했습니다.", ex);
+            throw new IllegalStateException("?낅슣?뽪룇 ???고돩?????堉?????덉넮???곕????덈펲.", ex);
         }
     }
 
     private String buildOrderName(List<OrderStockAllocator.AllocatedLine> lines) {
         if (lines == null || lines.isEmpty()) {
-            return "상품 주문";
+            return "Product order";
         }
 
         String firstName = lines.get(0).productName();
         if (lines.size() == 1) {
             return firstName;
         }
-        return firstName + " 외 " + (lines.size() - 1) + "건";
+        return firstName + " + " + (lines.size() - 1) + " items";
     }
 
     private String extractCancelKey(JsonNode cancelResult) {
@@ -775,7 +898,7 @@ public class PaymentService {
 
     private Store requireStore(User actor) {
         if (actor == null || actor.getStore() == null) {
-            throw new IllegalStateException("매장 소속 사용자만 결제를 진행할 수 있습니다.");
+            throw new IllegalStateException("嶺뚮씞??????爰???????異??롪퍒??節뉖ご?嶺뚯쉳?듸쭛???????곕????덈펲.");
         }
         return actor.getStore();
     }
@@ -787,7 +910,7 @@ public class PaymentService {
 
         Long actorStoreId = actor.getStore().getId();
         if (actorStoreId != null && !actorStoreId.equals(payment.getStore().getId())) {
-            throw new IllegalStateException("다른 매장의 결제에는 접근할 수 없습니다.");
+            throw new IllegalStateException("???섎?嶺뚮씞?????롪퍒?????裕???얜∥???????怨룸????덈펲.");
         }
     }
 
@@ -801,7 +924,7 @@ public class PaymentService {
             return actorStoreId;
         }
         if (!actorStoreId.equals(requestedStoreId)) {
-            throw new IllegalStateException("다른 매장의 결제 목록에는 접근할 수 없습니다.");
+            throw new IllegalStateException("???섎?嶺뚮씞?????롪퍒???嶺뚮ㅄ維뽨빳???裕???얜∥???????怨룸????덈펲.");
         }
         return actorStoreId;
     }
@@ -813,7 +936,7 @@ public class PaymentService {
         try {
             return PaymentStatus.valueOf(status.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("유효하지 않은 결제 상태입니다. status=" + status);
+            throw new IllegalArgumentException("??ル쪇???? ??? ?롪퍒?????⑤객臾???낅퉵?? status=" + status);
         }
     }
 
@@ -851,6 +974,17 @@ public class PaymentService {
         }
     }
 
-    private record OrderSnapshotLine(Long productId, int qty, BigDecimal unitPrice) {
+    private record OrderSnapshotLine(
+            Long productId,
+            int qty,
+            BigDecimal unitPrice,
+            List<OrderSnapshotStockDeduction> stockDeductions
+    ) {
     }
+
+    private record OrderSnapshotStockDeduction(Long productId, int qtyPerUnit) {
+    }
+
 }
+
+

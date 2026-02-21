@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "order_items")
@@ -33,6 +35,9 @@ public class OrderItem {
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItemComponent> components = new ArrayList<>();
+
     /* ===== 생성 로직 ===== */
     public static OrderItem create(Product product, int quantity, BigDecimal unitPrice) {
         OrderItem item = new OrderItem();
@@ -44,6 +49,11 @@ public class OrderItem {
 
     void assignOrder(Order order) {
         this.order = order;
+    }
+
+    public void addComponent(Product componentProduct, int quantityPerOrderItem) {
+        OrderItemComponent component = OrderItemComponent.create(this, componentProduct, quantityPerOrderItem);
+        this.components.add(component);
     }
 
     BigDecimal calculateAmount() {

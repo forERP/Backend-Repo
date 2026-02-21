@@ -2,6 +2,8 @@ package com.forerp.erp.outbound.service.support;
 
 import com.forerp.erp.order.domain.Order;
 import com.forerp.erp.order.domain.OrderItem;
+import com.forerp.erp.order.domain.OrderItemComponent;
+import com.forerp.erp.order.repository.OrderItemComponentRepository;
 import com.forerp.erp.order.repository.OrderItemRepository;
 import com.forerp.erp.order.repository.OrderRepository;
 import com.forerp.erp.outbound.domain.Outbound;
@@ -18,6 +20,8 @@ import com.forerp.erp.warehouse.repository.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class OutboundLoader {
@@ -27,6 +31,7 @@ public class OutboundLoader {
     private final StoreRepository storeRepository;
     private final WarehouseRepository warehouseRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderItemComponentRepository orderItemComponentRepository;
     private final StoreProductRepository storeProductRepository;
 
     public Order loadOrder(Long orderId) {
@@ -52,6 +57,10 @@ public class OutboundLoader {
     public OrderItem loadOrderItem(Long orderItemId) {
         return orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new IllegalArgumentException("주문 아이템을 찾을 수 없습니다. orderItemId=" + orderItemId));
+    }
+
+    public List<OrderItemComponent> loadOrderItemComponents(Long orderItemId) {
+        return orderItemComponentRepository.findByOrderItem_IdIn(List.of(orderItemId));
     }
 
     public void validateOrderItemBelongsToOrder(OrderItem orderItem, Order order) {
