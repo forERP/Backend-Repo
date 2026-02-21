@@ -38,6 +38,8 @@ import java.util.Optional;
 public class ShipmentService {
 
     private static final Logger log = LoggerFactory.getLogger(ShipmentService.class);
+    private static final String DUMMY_CARRIER_CODE = "dev.track.dummy";
+    private static final String DUMMY_CARRIER_NAME = "Dummy (테스트)";
 
     private final ShipmentRepository shipmentRepository;
     private final TrackerDeliveryClient trackerDeliveryClient;
@@ -62,10 +64,27 @@ public class ShipmentService {
     public List<ShipmentCarrierResponse> listCarriers(String searchText, Integer size) {
         int fetchSize = size == null ? 100 : Math.max(1, Math.min(size, 200));
         String countryCode = normalize(trackerDefaultCountryCode);
+        String normalizedSearch = normalize(searchText);
 
-        return trackerDeliveryClient.getCarriers(searchText, countryCode, fetchSize).stream()
+        List<ShipmentCarrierResponse> carriers = trackerDeliveryClient.getCarriers(searchText, countryCode, fetchSize).stream()
                 .map(carrier -> new ShipmentCarrierResponse(carrier.id(), carrier.name()))
                 .toList();
+
+        boolean includeDummy = normalizedSearch == null
+                || DUMMY_CARRIER_CODE.toLowerCase().contains(normalizedSearch.toLowerCase())
+                || DUMMY_CARRIER_NAME.toLowerCase().contains(normalizedSearch.toLowerCase());
+
+        if (!includeDummy) {
+            return carriers;
+        }
+
+        List<ShipmentCarrierResponse> merged = new java.util.ArrayList<>();
+        merged.add(new ShipmentCarrierResponse(DUMMY_CARRIER_CODE, DUMMY_CARRIER_NAME));
+        carriers.stream()
+                .filter(carrier -> carrier.getCarrierCode() != null)
+                .filter(carrier -> !DUMMY_CARRIER_CODE.equalsIgnoreCase(carrier.getCarrierCode()))
+                .forEach(merged::add);
+        return merged;
     }
 
     @Transactional(readOnly = true)
