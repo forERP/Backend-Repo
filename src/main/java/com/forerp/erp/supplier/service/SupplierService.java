@@ -1,5 +1,8 @@
 package com.forerp.erp.supplier.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.supplier.domain.Supplier;
 import com.forerp.erp.supplier.dto.SupplierCreateRequestDto;
 import com.forerp.erp.supplier.dto.SupplierResponseDto;
@@ -20,6 +23,7 @@ import java.util.List;
 public class SupplierService {
 
     private final SupplierRepository supplierRepository;
+    private final AuditLogService auditLogService;
 
     public SupplierResponseDto getSupplier(Long supplierId) {
         Supplier supplier = supplierRepository.findById(supplierId)
@@ -74,6 +78,7 @@ public class SupplierService {
         }
 
         Supplier saved = supplierRepository.save(supplier);
+        auditLogService.logCurrentUserAction(AuditLogAction.SUPPLIER_CREATE, AuditLogTargetType.SUPPLIER, saved.getId());
         return SupplierResponseDto.from(saved);
     }
 
@@ -92,6 +97,7 @@ public class SupplierService {
                 request.getLongitude(),
                 request.getActive()
         );
+        auditLogService.logCurrentUserAction(AuditLogAction.SUPPLIER_UPDATE, AuditLogTargetType.SUPPLIER, supplier.getId());
 
         return SupplierResponseDto.from(supplier);
     }

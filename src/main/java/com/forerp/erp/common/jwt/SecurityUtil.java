@@ -13,16 +13,32 @@ public class SecurityUtil {
 
     private final UserRepository userRepository;
 
-    public User getCurrentUser(){
+    public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new IllegalArgumentException("Authentication is required.");
+        }
 
-        if(authentication == null || authentication.getName() == null){
-            throw new IllegalArgumentException("로그인이 필요합니다.");
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User principalUser) {
+            if (principalUser.getId() != null) {
+                return userRepository.findById(principalUser.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found."));
+            }
+
+            String principalLoginId = principalUser.getLoginId();
+            if (principalLoginId != null && !principalLoginId.isBlank()) {
+                return userRepository.findByLoginId(principalLoginId)
+                        .orElseThrow(() -> new IllegalArgumentException("User not found."));
+            }
         }
 
         String loginId = authentication.getName();
+        if (loginId == null || loginId.isBlank()) {
+            throw new IllegalArgumentException("Authentication is required.");
+        }
 
         return userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
     }
 }

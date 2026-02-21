@@ -5,6 +5,7 @@ import com.forerp.erp.user.dto.LoginResponseDto;
 import com.forerp.erp.user.dto.UserCreateRequestDto;
 import com.forerp.erp.user.dto.UserResponseDto;
 import com.forerp.erp.user.dto.UserUpdateRequestDto;
+import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -48,6 +50,12 @@ public class UserController {
         response.setHeader("Authorization", "Bearer " + loginResponse.getToken());
 
         return ResponseEntity.ok(loginResponse);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal User actor) {
+        userService.logout(actor);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/login/pos")

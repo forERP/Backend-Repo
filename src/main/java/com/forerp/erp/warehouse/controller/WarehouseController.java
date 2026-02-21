@@ -1,5 +1,8 @@
 package com.forerp.erp.warehouse.controller;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.warehouse.domain.Warehouse;
 import com.forerp.erp.warehouse.dto.WarehouseResponseDto;
 import com.forerp.erp.warehouse.dto.WarehouseRequestDto;
@@ -32,6 +35,7 @@ public class WarehouseController {
     private final WarehouseRepository warehouseRepository;
     private final StoreRepository storeRepository;
     private final StoreProductSyncService storeProductSyncService;
+    private final AuditLogService auditLogService;
 
     @Operation(summary = "창고 단건 조회")
     @ApiResponse(responseCode = "200", description = "OK",
@@ -97,6 +101,11 @@ public class WarehouseController {
                 );
                 Warehouse saved = warehouseRepository.save(warehouse);
                 storeProductSyncService.syncActiveProductsToWarehouse(saved);
+                auditLogService.logCurrentUserAction(
+                        AuditLogAction.WAREHOUSE_CREATE,
+                        AuditLogTargetType.WAREHOUSE,
+                        saved.getId()
+                );
                 return ResponseEntity.ok(WarehouseResponseDto.from(saved));
         }
 
@@ -116,6 +125,11 @@ public class WarehouseController {
                         request.getActive()
                 );
                 Warehouse saved = warehouseRepository.save(warehouse);
+                auditLogService.logCurrentUserAction(
+                        AuditLogAction.WAREHOUSE_UPDATE,
+                        AuditLogTargetType.WAREHOUSE,
+                        saved.getId()
+                );
                 return ResponseEntity.ok(WarehouseResponseDto.from(saved));
         }
 

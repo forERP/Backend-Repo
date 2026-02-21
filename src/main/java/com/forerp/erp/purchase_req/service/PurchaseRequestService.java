@@ -1,5 +1,8 @@
 package com.forerp.erp.purchase_req.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.purchase_order.domain.PurchaseOrder;
 import com.forerp.erp.purchase_order.domain.PurchaseOrderStatus;
@@ -38,10 +41,18 @@ public class PurchaseRequestService {
     private final PurchaseRequestLoader loader;
     private final PurchaseRequestBuilder prBuilder;
     private final PurchaseOrderBuilder poBuilder;
+    private final AuditLogService auditLogService;
 
     public PurchaseRequest create(PurchaseRequestCreateRequest req, User actor) {
         PurchaseRequest pr = prBuilder.buildCreateAggregate(req, actor);
-        return purchaseRequestRepository.save(pr);
+        PurchaseRequest saved = purchaseRequestRepository.save(pr);
+        auditLogService.logActionSafely(
+                actor,
+                AuditLogAction.PURCHASE_REQUEST_CREATE,
+                AuditLogTargetType.PURCHASE_REQUEST,
+                saved.getId()
+        );
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -137,10 +148,17 @@ public class PurchaseRequestService {
                 memo
         );
 
-        return purchaseOrderRepository.save(po);
+        PurchaseOrder saved = purchaseOrderRepository.save(po);
+        auditLogService.logActionSafely(
+                actor,
+                AuditLogAction.PURCHASE_ORDER_DRAFT_CREATE,
+                AuditLogTargetType.PURCHASE_ORDER,
+                saved.getId()
+        );
+        return saved;
     }
 
-    public PurchaseOrder approve(Long purchaseRequestId) {
+    public PurchaseOrder approve(Long purchaseRequestId, User actor) {
         PurchaseRequest pr = loader.loadPurchaseRequest(purchaseRequestId);
 
         if (pr.getStatus() != PurchaseRequestStatus.REQUESTED) {
@@ -155,10 +173,16 @@ public class PurchaseRequestService {
         }
 
         pr.approve();
+        auditLogService.logActionSafely(
+                actor,
+                AuditLogAction.PURCHASE_REQUEST_APPROVE,
+                AuditLogTargetType.PURCHASE_REQUEST,
+                pr.getId()
+        );
         return po;
     }
 
-    public PurchaseRequest reject(Long purchaseRequestId) {
+    public PurchaseRequest reject(Long purchaseRequestId, User actor) {
         PurchaseRequest pr = loader.loadPurchaseRequest(purchaseRequestId);
 
         purchaseOrderRepository.findByPurchaseRequest_Id(purchaseRequestId)
@@ -170,6 +194,12 @@ public class PurchaseRequestService {
                 });
 
         pr.reject();
+        auditLogService.logActionSafely(
+                actor,
+                AuditLogAction.PURCHASE_REQUEST_REJECT,
+                AuditLogTargetType.PURCHASE_REQUEST,
+                pr.getId()
+        );
         return pr;
     }
 

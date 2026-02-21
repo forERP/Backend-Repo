@@ -2,9 +2,10 @@ package com.forerp.erp.user.service;
 
 import com.forerp.erp.attendance.domain.Attendance;
 import com.forerp.erp.attendance.repository.AttendanceRepository;
+import com.forerp.erp.auditlog.AuditLogAction;
 import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.jwt.JwtUtil;
-import com.forerp.erp.common.jwt.SecurityUtil;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.domain.UserRole;
@@ -39,7 +40,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuditLogService auditLogService;
-    private final SecurityUtil securityUtil;
     private final AttendanceRepository attendanceRepository;
 
     @Transactional
@@ -60,7 +60,7 @@ public class UserService {
                 .build();
 
         User saved = userRepository.save(user);
-        logAction("CREATE_USER", saved.getId());
+        logAction(AuditLogAction.USER_CREATE, saved.getId());
 
         return new UserResponseDto(saved);
     }
@@ -70,7 +70,7 @@ public class UserService {
         userReader.getUser(id);
 
         userRepository.deleteById(id);
-        logAction("DELETE_USER", id);
+        logAction(AuditLogAction.USER_DELETE, id);
     }
 
     @Transactional
@@ -91,7 +91,7 @@ public class UserService {
                 request.getRole(),
                 request.getStatus()
         );
-        logAction("UPDATE_USER", user.getId());
+        logAction(AuditLogAction.USER_UPDATE, user.getId());
 
         return new UserResponseDto(user);
     }
@@ -101,10 +101,19 @@ public class UserService {
         validateActiveUser(user);
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw new IllegalArgumentException("Invalid password.");
         }
 
+        auditLogService.logActionSafely(user, AuditLogAction.ADMIN_LOGIN, AuditLogTargetType.USER, user.getId());
         return generateTokenResponse(user);
+    }
+
+    @Transactional
+    public void logout(User actor) {
+        if (actor == null) {
+            return;
+        }
+        auditLogService.logActionSafely(actor, AuditLogAction.ADMIN_LOGOUT, AuditLogTargetType.USER, actor.getId());
     }
 
     @Transactional
@@ -182,7 +191,7 @@ public class UserService {
 
     private void validateActiveUser(User user) {
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new IllegalArgumentException("비활성 사용자입니다.");
+            throw new IllegalArgumentException("Inactive user.");
         }
     }
 
@@ -211,12 +220,7 @@ public class UserService {
     }
 
     private void logAction(String action, Long targetId) {
-        try {
-            User admin = securityUtil.getCurrentUser();
-            auditLogService.logAction(admin, action, "USER", targetId);
-        } catch (Exception e) {
-            System.out.println("로그 기록 실패: " + e.getMessage());
-        }
+        auditLogService.logCurrentUserAction(action, AuditLogTargetType.USER, targetId);
     }
 
     private String normalize(String value) {

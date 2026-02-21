@@ -1,5 +1,8 @@
 package com.forerp.erp.product.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.product.domain.Product;
 import com.forerp.erp.product.domain.ProductBundle;
@@ -41,6 +44,7 @@ public class ProductService {
     private final ProductCategoryRepository categoryRepository;
     private final ProductBundleRepository productBundleRepository;
     private final StoreProductSyncService storeProductSyncService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public ProductCreateResponseDto createProduct(ProductCreateRequestDto request) {
@@ -63,6 +67,7 @@ public class ProductService {
         product.updateSku(sku);
         productRepository.save(product);
         storeProductSyncService.syncActiveProductToActiveWarehouses(product);
+        auditLogService.logCurrentUserAction(AuditLogAction.PRODUCT_CREATE, AuditLogTargetType.PRODUCT, product.getId());
 
         return new ProductCreateResponseDto(product.getId(), sku);
     }
@@ -115,6 +120,11 @@ public class ProductService {
         productBundleRepository.save(bundle);
 
         storeProductSyncService.syncActiveProductToActiveWarehouses(setProduct);
+        auditLogService.logCurrentUserAction(
+                AuditLogAction.PRODUCT_BUNDLE_CREATE,
+                AuditLogTargetType.PRODUCT,
+                setProduct.getId()
+        );
 
         return new ProductBundleCreateResponseDto(bundle.getId(), setProduct.getId(), sku);
     }
@@ -188,6 +198,7 @@ public class ProductService {
                 request.getDescription(),
                 request.getImageUrl()
         );
+        auditLogService.logCurrentUserAction(AuditLogAction.PRODUCT_UPDATE, AuditLogTargetType.PRODUCT, product.getId());
 
         return new ProductDto.DetailResponse(product);
     }
@@ -197,6 +208,7 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("?곹뭹??李얠쓣 ???놁뒿?덈떎."));
         product.discontinue();
+        auditLogService.logCurrentUserAction(AuditLogAction.PRODUCT_UPDATE, AuditLogTargetType.PRODUCT, product.getId());
     }
 
     @Transactional
@@ -208,6 +220,7 @@ public class ProductService {
         }
         product.reactivate();
         storeProductSyncService.syncActiveProductToActiveWarehouses(product);
+        auditLogService.logCurrentUserAction(AuditLogAction.PRODUCT_UPDATE, AuditLogTargetType.PRODUCT, product.getId());
     }
 
     private ProductCategory ensureSetCategory() {

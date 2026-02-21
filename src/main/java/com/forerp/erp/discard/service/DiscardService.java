@@ -1,5 +1,8 @@
 package com.forerp.erp.discard.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.discard.domain.Discard;
 import com.forerp.erp.discard.domain.DiscardStatus;
@@ -28,6 +31,7 @@ public class DiscardService {
     private final DiscardRepository discardRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
     private final RealtimeEventService realtimeEventService;
+    private final AuditLogService auditLogService;
 
     private final DiscardLoader loader;
     private final DiscardBuilder builder;
@@ -53,6 +57,7 @@ public class DiscardService {
 
         discard.confirm();
         realtimeEventService.publishInventoryChanged(discard.getStore().getId(), "discard_confirmed");
+        auditLogService.logActionSafely(actor, AuditLogAction.DISCARD_CONFIRM, AuditLogTargetType.DISCARD, discard.getId());
         return discard;
     }
 
@@ -60,6 +65,7 @@ public class DiscardService {
     public Discard cancel(Long discardId) {
         Discard discard = loader.loadDiscardDetail(discardId);
         discard.cancel();
+        auditLogService.logCurrentUserAction(AuditLogAction.DISCARD_CANCEL, AuditLogTargetType.DISCARD, discard.getId());
         return discard;
     }
 

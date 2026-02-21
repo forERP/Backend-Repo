@@ -1,5 +1,8 @@
 package com.forerp.erp.returns.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.order.domain.Order;
 import com.forerp.erp.order.domain.OrderStatus;
 import com.forerp.erp.payment.domain.Payment;
@@ -33,6 +36,7 @@ public class ReturnService {
     private final SalesReturnRepository salesReturnRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentService paymentService;
+    private final AuditLogService auditLogService;
 
     public ReturnResponse process(User actor, ReturnProcessRequest request) {
         Payment payment = paymentRepository.findByOrder_Id(request.getOrderId())
@@ -76,7 +80,9 @@ public class ReturnService {
                 order.getStatus().name()
         );
 
-        return ReturnResponse.from(salesReturnRepository.save(salesReturn));
+        SalesReturn saved = salesReturnRepository.save(salesReturn);
+        auditLogService.logActionSafely(actor, AuditLogAction.RETURN_CONFIRM, AuditLogTargetType.RETURN, saved.getId());
+        return ReturnResponse.from(saved);
     }
 
     @Transactional(readOnly = true)

@@ -1,5 +1,8 @@
 package com.forerp.erp.inbound.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.inbound.domain.Inbound;
 import com.forerp.erp.inbound.domain.InboundStatus;
@@ -36,6 +39,7 @@ public class InboundService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final RealtimeEventService realtimeEventService;
     private final ShipmentService shipmentService;
+    private final AuditLogService auditLogService;
 
     private final InboundLoader loader;
     private final InboundBuilder builder;
@@ -88,6 +92,7 @@ public class InboundService {
                 "flowType", "INBOUND",
                 "reason", "inbound_confirmed"
         ));
+        auditLogService.logActionSafely(actor, AuditLogAction.INBOUND_CONFIRM, AuditLogTargetType.INBOUND, inbound.getId());
 
         return inbound;
     }
@@ -102,6 +107,7 @@ public class InboundService {
         }
 
         inbound.cancel();
+        auditLogService.logCurrentUserAction(AuditLogAction.INBOUND_CANCEL, AuditLogTargetType.INBOUND, inbound.getId());
         return inbound;
     }
 

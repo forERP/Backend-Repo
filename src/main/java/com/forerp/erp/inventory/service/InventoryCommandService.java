@@ -1,5 +1,8 @@
 package com.forerp.erp.inventory.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.domain.RefType;
 import com.forerp.erp.inventory.dto.InventoryAdjustRequest;
@@ -25,6 +28,7 @@ public class InventoryCommandService {
     private final InventoryHistoryRepository inventoryHistoryRepository;
     private final InventoryQueryService inventoryQueryService;
     private final RealtimeEventService realtimeEventService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public InventoryAdjustResponse adjust(User actor, InventoryAdjustRequest request) {
@@ -60,6 +64,12 @@ public class InventoryCommandService {
         inventoryHistoryRepository.save(history);
         storeProductRepository.flush();
         realtimeEventService.publishInventoryChanged(storeProduct.getStore().getId(), "inventory_adjusted");
+        auditLogService.logActionSafely(
+                actor,
+                AuditLogAction.INVENTORY_ADJUST,
+                AuditLogTargetType.INVENTORY,
+                storeProduct.getId()
+        );
 
         return InventoryAdjustResponse.of(
                 history,

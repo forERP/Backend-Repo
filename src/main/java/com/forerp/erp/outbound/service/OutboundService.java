@@ -1,5 +1,8 @@
 package com.forerp.erp.outbound.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
@@ -37,6 +40,7 @@ public class OutboundService {
     private final InventoryHistoryRepository inventoryHistoryRepository;
     private final RealtimeEventService realtimeEventService;
     private final ShipmentService shipmentService;
+    private final AuditLogService auditLogService;
 
     private final OutboundLoader loader;
     private final OutboundBuilder builder;
@@ -71,6 +75,7 @@ public class OutboundService {
         outbound.getOrder().markShipped();
         realtimeEventService.publishInventoryChanged(outbound.getStore().getId(), "outbound_confirmed");
         realtimeEventService.publishOrderChanged(outbound.getStore().getId(), outbound.getOrder().getId(), "order_shipped");
+        auditLogService.logActionSafely(actor, AuditLogAction.OUTBOUND_CONFIRM, AuditLogTargetType.OUTBOUND, outbound.getId());
 
         return outbound;
     }
@@ -115,6 +120,7 @@ public class OutboundService {
 
         outbound.cancel();
         realtimeEventService.publishOrderChanged(outbound.getStore().getId(), outbound.getOrder().getId(), "outbound_canceled");
+        auditLogService.logCurrentUserAction(AuditLogAction.OUTBOUND_CANCEL, AuditLogTargetType.OUTBOUND, outbound.getId());
         return outbound;
     }
 

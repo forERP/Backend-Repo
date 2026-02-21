@@ -104,8 +104,11 @@ public class PurchaseRequestController {
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseOrderResponse.class)))
     @PostMapping("/{purchaseRequestId}/approve")
-    public ResponseEntity<PurchaseOrderResponse> approve(@PathVariable Long purchaseRequestId) {
-        PurchaseOrder po = purchaseRequestService.approve(purchaseRequestId);
+    public ResponseEntity<PurchaseOrderResponse> approve(
+            @PathVariable Long purchaseRequestId,
+            @AuthenticationPrincipal User actor
+    ) {
+        PurchaseOrder po = purchaseRequestService.approve(purchaseRequestId, actor);
         return ResponseEntity.ok(PurchaseOrderResponse.from(po));
     }
 
@@ -113,8 +116,11 @@ public class PurchaseRequestController {
     @ApiResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = PurchaseRequestResponse.class)))
     @PostMapping("/{purchaseRequestId}/reject")
-    public ResponseEntity<PurchaseRequestResponse> reject(@PathVariable Long purchaseRequestId) {
-        PurchaseRequest pr = purchaseRequestService.reject(purchaseRequestId);
+    public ResponseEntity<PurchaseRequestResponse> reject(
+            @PathVariable Long purchaseRequestId,
+            @AuthenticationPrincipal User actor
+    ) {
+        PurchaseRequest pr = purchaseRequestService.reject(purchaseRequestId, actor);
         return ResponseEntity.ok(PurchaseRequestResponse.from(pr));
     }
 }

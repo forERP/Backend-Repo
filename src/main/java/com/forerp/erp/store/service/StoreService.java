@@ -1,8 +1,9 @@
 package com.forerp.erp.store.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
 import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.query.QueryParamParser;
-import com.forerp.erp.common.jwt.SecurityUtil;
 import com.forerp.erp.store.domain.Store;
 import com.forerp.erp.store.domain.StoreStatus;
 import com.forerp.erp.store.domain.StoreType;
@@ -10,7 +11,6 @@ import com.forerp.erp.store.dto.StoreDto;
 import com.forerp.erp.store.repository.StoreRepository;
 import com.forerp.erp.store.service.support.StoreReader;
 import com.forerp.erp.store.service.support.StoreResponseMapper;
-import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +31,6 @@ public class StoreService {
     private final StoreResponseMapper storeResponseMapper;
 
     private final AuditLogService auditLogService;
-    private final SecurityUtil securityUtil;
 
     // 매장 생성
     @Transactional
@@ -65,7 +64,7 @@ public class StoreService {
             .build();
 
         Store saved = storeRepository.save(store);
-        logAction("CREATE_STORE", saved.getId());
+        logAction(AuditLogAction.STORE_CREATE, saved.getId());
 
         return storeResponseMapper.toDto(saved);
     }
@@ -83,7 +82,7 @@ public class StoreService {
             store.open();
         }
 
-        logAction("UPDATE_STORE_STATUS", store.getId());
+        logAction(AuditLogAction.STORE_UPDATE, store.getId());
         return storeResponseMapper.toDto(store);
     }
 
@@ -99,7 +98,7 @@ public class StoreService {
                 request.getLongitude()
         );
         
-        logAction("UPDATE_STORE_INFO", store.getId());
+        logAction(AuditLogAction.STORE_UPDATE, store.getId());
         return storeResponseMapper.toDto(store);
     }
 
@@ -123,12 +122,7 @@ public class StoreService {
     }
 
     private void logAction(String action, Long targetId){
-        try {
-            User actor = securityUtil.getCurrentUser();
-            auditLogService.logAction(actor, action, "STORE", targetId);
-        }catch (Exception e){
-
-        }
+        auditLogService.logCurrentUserAction(action, AuditLogTargetType.STORE, targetId);
     }
 
     private String normalize(String value) {

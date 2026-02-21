@@ -1,5 +1,8 @@
 package com.forerp.erp.purchase_order.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.inbound.dto.InboundCreateRequest;
 import com.forerp.erp.inbound.repository.InboundRepository;
@@ -51,6 +54,7 @@ public class PurchaseOrderService {
     private final InboundService inboundService;
     private final SupplierRepository supplierRepository;
     private final WarehouseRepository warehouseRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public PurchaseOrder get(Long purchaseOrderId) {
@@ -226,6 +230,12 @@ public class PurchaseOrderService {
             inboundService.createInbound(inboundCreateRequest);
         }
 
+        auditLogService.logCurrentUserAction(
+                AuditLogAction.PURCHASE_ORDER_CONFIRM,
+                AuditLogTargetType.PURCHASE_ORDER,
+                po.getId()
+        );
+
         return po;
     }
 
@@ -233,6 +243,11 @@ public class PurchaseOrderService {
         PurchaseOrder po = purchaseOrderRepository.findById(purchaseOrderId)
                 .orElseThrow(() -> new IllegalArgumentException("발주를 찾을 수 없습니다."));
         po.cancel();
+        auditLogService.logCurrentUserAction(
+                AuditLogAction.PURCHASE_ORDER_CANCEL,
+                AuditLogTargetType.PURCHASE_ORDER,
+                po.getId()
+        );
         return po;
     }
 

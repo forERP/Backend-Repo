@@ -1,5 +1,8 @@
 package com.forerp.erp.product.service;
 
+import com.forerp.erp.auditlog.AuditLogAction;
+import com.forerp.erp.auditlog.AuditLogService;
+import com.forerp.erp.auditlog.AuditLogTargetType;
 import com.forerp.erp.product.domain.Product;
 import com.forerp.erp.product.domain.ProductCategory;
 import com.forerp.erp.product.dto.ProductCategoryCreateRequestDto;
@@ -24,6 +27,7 @@ public class ProductCategoryService {
 
     private final ProductCategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public List<ProductCategoryResponseDto> getAllCategories() {
@@ -86,6 +90,11 @@ public class ProductCategoryService {
                 .build();
 
         categoryRepository.save(category);
+        auditLogService.logCurrentUserAction(
+                AuditLogAction.PRODUCT_CATEGORY_CREATE,
+                AuditLogTargetType.PRODUCT_CATEGORY,
+                category.getId()
+        );
 
         return new ProductCategoryCreateResponseDto(category.getId(), category.getCode());
     }
@@ -108,6 +117,11 @@ public class ProductCategoryService {
                 trimToNull(request.getDescription()),
                 trimToNull(request.getImageUrl()),
                 request.getActive() == null ? category.isActive() : request.getActive()
+        );
+        auditLogService.logCurrentUserAction(
+                AuditLogAction.PRODUCT_CATEGORY_UPDATE,
+                AuditLogTargetType.PRODUCT_CATEGORY,
+                category.getId()
         );
 
         return getCategory(id);
