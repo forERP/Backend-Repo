@@ -85,11 +85,11 @@ public class Payment {
     private String failMessage;
 
     @Lob
-    @Column(name = "raw_response")
+    @Column(name = "raw_response", columnDefinition = "LONGTEXT")
     private String rawResponse;
 
     @Lob
-    @Column(name = "order_snapshot")
+    @Column(name = "order_snapshot", columnDefinition = "LONGTEXT")
     private String orderSnapshot;
 
     @Column(name = "prepared_at", nullable = false)
@@ -198,4 +198,3 @@ public class Payment {
         this.updatedAt = LocalDateTime.now();
     }
 }
-

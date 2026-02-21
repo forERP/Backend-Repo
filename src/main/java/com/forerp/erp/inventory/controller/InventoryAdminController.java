@@ -1,5 +1,7 @@
 package com.forerp.erp.inventory.controller;
 
+import com.forerp.erp.inventory.dto.InventoryAdjustRequest;
+import com.forerp.erp.inventory.dto.InventoryAdjustResponse;
 import com.forerp.erp.inventory.dto.InventoryListResponse;
 import com.forerp.erp.inventory.dto.InventoryResponse;
 import com.forerp.erp.inventory.dto.InventorySaleStatusUpdateRequest;
@@ -7,6 +9,7 @@ import com.forerp.erp.inventory.dto.InventoryUpdateRequest;
 import com.forerp.erp.inventory.service.InventoryCommandService;
 import com.forerp.erp.inventory.service.InventoryQueryService;
 import com.forerp.erp.storeproduct.domain.SaleStatus;
+import com.forerp.erp.user.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @Tag(name = "Inventory Admin", description = "Inventory query and store product sale control APIs")
 @RestController
@@ -105,5 +109,19 @@ public class InventoryAdminController {
             @Valid @RequestBody InventorySaleStatusUpdateRequest request
     ) {
         return ResponseEntity.ok(inventoryCommandService.updateSaleStatus(storeProductId, request.getSaleStatus()));
+    }
+
+    @Operation(summary = "Adjust inventory quantity by store/warehouse/product")
+    @ApiResponse(
+            responseCode = "200",
+            description = "OK",
+            content = @Content(schema = @Schema(implementation = InventoryAdjustResponse.class))
+    )
+    @PatchMapping("/adjustments")
+    public ResponseEntity<InventoryAdjustResponse> adjustInventory(
+            @AuthenticationPrincipal User actor,
+            @Valid @RequestBody InventoryAdjustRequest request
+    ) {
+        return ResponseEntity.ok(inventoryCommandService.adjust(actor, request));
     }
 }

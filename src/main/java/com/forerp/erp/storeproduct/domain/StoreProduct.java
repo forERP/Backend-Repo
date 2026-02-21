@@ -193,4 +193,40 @@ public class StoreProduct {
                 actor
         );
     }
+
+    public InventoryHistory adjustStock(
+            int deltaQty,
+            RefType refType,
+            Long refId,
+            Long refItemId,
+            User actor,
+            String memo
+    ) {
+        if (deltaQty == 0) {
+            throw new IllegalArgumentException("adjust qty must not be 0.");
+        }
+
+        int before = this.quantity;
+        int after = before + deltaQty;
+
+        if (after < 0) {
+            throw new IllegalStateException("insufficient stock.");
+        }
+
+        this.quantity = after;
+        this.isSellable = calculateSellable();
+
+        return InventoryHistory.create(
+                this,
+                ChangeType.ADJUST,
+                Math.abs(deltaQty),
+                before,
+                after,
+                refType,
+                refId,
+                refItemId,
+                actor,
+                memo
+        );
+    }
 }

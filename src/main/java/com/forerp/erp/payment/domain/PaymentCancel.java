@@ -47,7 +47,7 @@ public class PaymentCancel {
     private String orderStatusBefore;
 
     @Lob
-    @Column(name = "raw_response")
+    @Column(name = "raw_response", columnDefinition = "LONGTEXT")
     private String rawResponse;
 
     @Column(name = "canceled_at", nullable = false)
@@ -76,4 +76,3 @@ public class PaymentCancel {
         return history;
     }
 }
-

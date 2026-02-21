@@ -48,6 +48,9 @@ public class InventoryHistory {
     @JoinColumn(name = "actor_user_id")
     private User actorUser;
 
+    @Column(name = "memo", length = 300)
+    private String memo;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -63,7 +66,8 @@ public class InventoryHistory {
             RefType refType,
             Long refId,
             Long refItemId,
-            User actorUser
+            User actorUser,
+            String memo
     ) {
         this.storeProduct = storeProduct;
         this.changeType = changeType;
@@ -74,6 +78,7 @@ public class InventoryHistory {
         this.refId = refId;
         this.refItemId = refItemId;
         this.actorUser = actorUser;
+        this.memo = memo;
     }
 
     /* ===== 생성 로직 (감소/증가 공통) ===== */
@@ -88,6 +93,32 @@ public class InventoryHistory {
             Long refItemId,
             User actorUser
     ) {
+        return create(
+                storeProduct,
+                changeType,
+                changeQty,
+                beforeQty,
+                afterQty,
+                refType,
+                refId,
+                refItemId,
+                actorUser,
+                null
+        );
+    }
+
+    public static InventoryHistory create(
+            StoreProduct storeProduct,
+            ChangeType changeType,
+            int changeQty,
+            int beforeQty,
+            int afterQty,
+            RefType refType,
+            Long refId,
+            Long refItemId,
+            User actorUser,
+            String memo
+    ) {
         return new InventoryHistory(
                 storeProduct,
                 changeType,
@@ -97,7 +128,8 @@ public class InventoryHistory {
                 refType,
                 refId,
                 refItemId,
-                actorUser
+                actorUser,
+                memo
         );
     }
 }
