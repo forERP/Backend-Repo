@@ -16,6 +16,9 @@ import com.forerp.erp.storeproduct.repository.StoreProductRepository;
 import com.forerp.erp.storeproduct.service.StoreProductSyncService;
 import com.forerp.erp.supplier.domain.Supplier;
 import com.forerp.erp.supplier.repository.SupplierRepository;
+import com.forerp.erp.salary.domain.EmploymentType;
+import com.forerp.erp.salary.domain.Salary;
+import com.forerp.erp.salary.repository.SalaryRepository;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.user.domain.UserRole;
 import com.forerp.erp.user.domain.UserStatus;
@@ -60,6 +63,7 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
     private final StoreProductRepository storeProductRepository;
     private final StoreProductSyncService storeProductSyncService;
     private final UserRepository userRepository;
+    private final SalaryRepository salaryRepository;
     private final SupplierRepository supplierRepository;
     private final PasswordEncoder passwordEncoder;
     private final KakaoAddressGeocodingService geocodingService;
@@ -170,12 +174,23 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
         upsertStock(sub003, cola, 95);
         upsertStock(sub003, zeroCola, 90);
 
-        upsertUser(hqStore, "hqchoi", "0001", "김본사", UserRole.HQ_ADMIN, "010-0001-0001");
-        upsertUser(sogangStore, "sgkim", "1029", "김서강", UserRole.STORE_ADMIN, "010-1029-1029");
-        upsertUser(sogangStore, "sgchoi", "1031", "박서강", UserRole.STORE_ADMIN, "010-1031-1031");
-        upsertUser(sogangStore, "sghall", "1111", "최서강", UserRole.STORE_HALL_STAFF, "010-1111-1111");
-        upsertUser(sogangStore, "sgkitchen", "1112", "이서강", UserRole.STORE_KITCHEN_STAFF, "010-1112-1112");
-        upsertUser(hongdaeStore, "hdkim", "1209", "김홍대", UserRole.STORE_ADMIN, "010-1209-1209");
+        User hqManager = upsertUser(hqStore, "hqchoi", "0001", "최본사", UserRole.HQ_ADMIN, "010-0001-0001");
+        User sogangManagerKim = upsertUser(sogangStore, "sgkim", "1029", "김서강", UserRole.STORE_ADMIN, "010-1029-1029");
+        User sogangManagerPark = upsertUser(sogangStore, "sgchoi", "1031", "박서강", UserRole.STORE_ADMIN, "010-1031-1031");
+        User sogangHallStaff = upsertUser(sogangStore, "sghall", "1111", "최서강", UserRole.STORE_HALL_STAFF, "010-1111-1111");
+        User sogangKitchenStaff = upsertUser(sogangStore, "sgkitchen", "1112", "이서강", UserRole.STORE_KITCHEN_STAFF, "010-1112-1112");
+        User sogangHallStaffExtra = upsertUser(sogangStore, "sghall2", "1113", "정서강", UserRole.STORE_HALL_STAFF, "010-1113-1113");
+        User sogangKitchenStaffExtra = upsertUser(sogangStore, "sgkitchen2", "1114", "한서강", UserRole.STORE_KITCHEN_STAFF, "010-1114-1114");
+        User hongdaeManager = upsertUser(hongdaeStore, "hdkim", "1209", "김홍대", UserRole.STORE_ADMIN, "010-1209-1209");
+
+        upsertSalary(hqManager, EmploymentType.MONTHLY, null, new BigDecimal("5000000"));
+        upsertSalary(sogangManagerKim, EmploymentType.MONTHLY, null, new BigDecimal("3000000"));
+        upsertSalary(sogangManagerPark, EmploymentType.MONTHLY, null, new BigDecimal("3000000"));
+        upsertSalary(hongdaeManager, EmploymentType.MONTHLY, null, new BigDecimal("3000000"));
+        upsertSalary(sogangHallStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null);
+        upsertSalary(sogangKitchenStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null);
+        upsertSalary(sogangHallStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null);
+        upsertSalary(sogangKitchenStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null);
 
         upsertSupplier(
                 "신선푸드상사",
@@ -331,7 +346,7 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
         storeProduct.updateStock(quantity);
     }
 
-    private void upsertUser(
+    private User upsertUser(
             Store store,
             String loginId,
             String employeeCode,
@@ -341,26 +356,53 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
     ) {
         String passwordHash = passwordEncoder.encode(defaultPassword);
 
-        userRepository.findByLoginId(loginId)
-                .ifPresentOrElse(existing -> existing.updateInfo(
-                                name,
-                                phoneNumber,
-                                passwordHash,
-                                store,
-                                role,
-                                UserStatus.ACTIVE
-                        ),
-                        () -> userRepository.save(
-                                User.builder()
-                                        .loginId(loginId)
-                                        .employeeCode(employeeCode)
-                                        .passwordHash(passwordHash)
-                                        .name(name)
-                                        .phoneNumber(phoneNumber)
-                                        .store(store)
-                                        .role(role)
+        return userRepository.findByLoginId(loginId)
+                .map(existing -> {
+                    existing.updateInfo(
+                            name,
+                            phoneNumber,
+                            passwordHash,
+                            store,
+                            role,
+                            UserStatus.ACTIVE
+                    );
+                    return existing;
+                })
+                .orElseGet(() -> userRepository.save(
+                        User.builder()
+                                .loginId(loginId)
+                                .employeeCode(employeeCode)
+                                .passwordHash(passwordHash)
+                                .name(name)
+                                .phoneNumber(phoneNumber)
+                                .store(store)
+                                .role(role)
+                                .build()
+                ));
+    }
+
+    private void upsertSalary(
+            User user,
+            EmploymentType employmentType,
+            BigDecimal hourlyWage,
+            BigDecimal monthlySalary
+    ) {
+        if (user == null || user.getId() == null) {
+            return;
+        }
+
+        salaryRepository.findByUser_Id(user.getId())
+                .ifPresentOrElse(
+                        salary -> salary.update(employmentType, hourlyWage, monthlySalary),
+                        () -> salaryRepository.save(
+                                Salary.builder()
+                                        .user(user)
+                                        .employmentType(employmentType)
+                                        .hourlyWage(hourlyWage)
+                                        .monthlySalary(monthlySalary)
                                         .build()
-                        ));
+                        )
+                );
     }
 
     private void upsertSupplier(
