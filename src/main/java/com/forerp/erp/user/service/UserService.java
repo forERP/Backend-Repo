@@ -96,6 +96,7 @@ public class UserService {
         return new UserResponseDto(user);
     }
 
+    @Transactional(readOnly = false)
     public LoginResponseDto login(LoginRequestDto request) {
         User user = userReader.getUserByLoginId(request.getIdentifier());
         validateActiveUser(user);
@@ -108,7 +109,7 @@ public class UserService {
         return generateTokenResponse(user);
     }
 
-    @Transactional
+    @Transactional(readOnly = false)
     public void logout(User actor) {
         if (actor == null) {
             return;

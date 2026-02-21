@@ -4,14 +4,12 @@ import com.forerp.erp.common.jwt.SecurityUtil;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AuditLogService {
 
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogTxService auditLogTxService;
     private final SecurityUtil securityUtil;
 
     public void logAction(User actor, String action, String targetType, Long targetId){
@@ -19,13 +17,7 @@ public class AuditLogService {
             return;
         }
 
-        AuditLog auditLog = AuditLog.builder()
-                .actor(actor)
-                .action(action)
-                .targetType(targetType)
-                .targetId(targetId)
-                .build();
-        auditLogRepository.save(auditLog);
+        auditLogTxService.save(actor, action, targetType, targetId);
     }
 
     public void logActionSafely(User actor, String action, String targetType, Long targetId) {
