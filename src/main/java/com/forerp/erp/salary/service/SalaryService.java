@@ -31,9 +31,32 @@ public class SalaryService {
     private static final long STANDARD_WORK_MINUTES = 480;
     private static final BigDecimal OVERTIME_RATE = BigDecimal.valueOf(1.5);
     private static final BigDecimal MINUTES_IN_HOUR = BigDecimal.valueOf(60);
+    private static final BigDecimal ZERO = BigDecimal.ZERO;
 
     // 직원 급여 정보 등록 및 수정
     public void registerSalary(SalaryDto.Request request){
+        if (request.getUserId() == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+        if (request.getEmploymentType() == null) {
+            throw new IllegalArgumentException("고용 형태는 필수입니다.");
+        }
+        if (request.getAmount() == null || request.getAmount().compareTo(ZERO) <= 0) {
+            throw new IllegalArgumentException("급여 금액은 0보다 커야 합니다.");
+        }
+        if (request.getPaymentDate() == null) {
+            throw new IllegalArgumentException("지급일은 필수입니다.");
+        }
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+
+        LocalDate byJoinDate = user.getCreatedAt().toLocalDate().plusMonths(1);
+        LocalDate byNow = LocalDate.now().plusMonths(1);
+        LocalDate minPaymentDate = byJoinDate.isAfter(byNow) ? byJoinDate : byNow;
+        if (request.getPaymentDate().isBefore(minPaymentDate)) {
+            throw new IllegalArgumentException("지급일은 직원 등록일 기준 한 달 이후(" + minPaymentDate + ")부터 지정할 수 있습니다.");
+        }
 
         // // 시급직이면 시급만, 월급직이면 월급만 저장하도록 값 정리
         BigDecimal hourly = null;
@@ -47,12 +70,15 @@ public class SalaryService {
         Salary salary = salaryRepository.findByUser_Id(request.getUserId()).orElse(null);
 
         if(salary != null) {
-            salary.update(request.getEmploymentType(), hourly, monthly);
+            salary.update(request.getEmploymentType(), hourly, monthly, request.getPaymentDate());
         }else{
-            User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
-
-            salaryRepository.save(new Salary(user, request.getEmploymentType(), hourly, monthly));
+            salaryRepository.save(new Salary(
+                    user,
+                    request.getEmploymentType(),
+                    hourly,
+                    monthly,
+                    request.getPaymentDate()
+            ));
         }
     }
 
@@ -120,7 +146,8 @@ public class SalaryService {
                 overtimeHours,
                 normalPay,
                 overtimePay,
-                totalPay
+                totalPay,
+                salary.getPaymentDate()
         );
 
     }

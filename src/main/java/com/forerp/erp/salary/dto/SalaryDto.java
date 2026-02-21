@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class SalaryDto {
 
@@ -16,6 +17,7 @@ public class SalaryDto {
         private Long userId;
         private EmploymentType employmentType;
         private BigDecimal amount;
+        private LocalDate paymentDate;
     }
 
     @Getter
@@ -32,5 +34,6 @@ public class SalaryDto {
         private BigDecimal normalPay;
         private BigDecimal overtimePay;
         private BigDecimal totalPay;
+        private LocalDate paymentDate;
     }
 }

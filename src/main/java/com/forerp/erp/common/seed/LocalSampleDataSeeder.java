@@ -40,6 +40,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.Year;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -183,14 +184,15 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
         User sogangKitchenStaffExtra = upsertUser(sogangStore, "sgkitchen2", "1114", "한서강", UserRole.STORE_KITCHEN_STAFF, "010-1114-1114");
         User hongdaeManager = upsertUser(hongdaeStore, "hdkim", "1209", "김홍대", UserRole.STORE_ADMIN, "010-1209-1209");
 
-        upsertSalary(hqManager, EmploymentType.MONTHLY, null, new BigDecimal("5000000"));
-        upsertSalary(sogangManagerKim, EmploymentType.MONTHLY, null, new BigDecimal("3000000"));
-        upsertSalary(sogangManagerPark, EmploymentType.MONTHLY, null, new BigDecimal("3000000"));
-        upsertSalary(hongdaeManager, EmploymentType.MONTHLY, null, new BigDecimal("3000000"));
-        upsertSalary(sogangHallStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null);
-        upsertSalary(sogangKitchenStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null);
-        upsertSalary(sogangHallStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null);
-        upsertSalary(sogangKitchenStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null);
+        LocalDate seedBasePaymentDate = LocalDate.now().plusMonths(2);
+        upsertSalary(hqManager, EmploymentType.MONTHLY, null, new BigDecimal("5000000"), resolvePaymentDate(seedBasePaymentDate, 5));
+        upsertSalary(sogangManagerKim, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolvePaymentDate(seedBasePaymentDate, 8));
+        upsertSalary(sogangManagerPark, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolvePaymentDate(seedBasePaymentDate, 10));
+        upsertSalary(hongdaeManager, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolvePaymentDate(seedBasePaymentDate, 12));
+        upsertSalary(sogangHallStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 15));
+        upsertSalary(sogangKitchenStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 18));
+        upsertSalary(sogangHallStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 20));
+        upsertSalary(sogangKitchenStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 22));
 
         upsertSupplier(
                 "신선푸드상사",
@@ -385,7 +387,8 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
             User user,
             EmploymentType employmentType,
             BigDecimal hourlyWage,
-            BigDecimal monthlySalary
+            BigDecimal monthlySalary,
+            LocalDate paymentDate
     ) {
         if (user == null || user.getId() == null) {
             return;
@@ -393,16 +396,22 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
 
         salaryRepository.findByUser_Id(user.getId())
                 .ifPresentOrElse(
-                        salary -> salary.update(employmentType, hourlyWage, monthlySalary),
+                        salary -> salary.update(employmentType, hourlyWage, monthlySalary, paymentDate),
                         () -> salaryRepository.save(
                                 Salary.builder()
                                         .user(user)
                                         .employmentType(employmentType)
                                         .hourlyWage(hourlyWage)
                                         .monthlySalary(monthlySalary)
+                                        .paymentDate(paymentDate)
                                         .build()
                         )
                 );
+    }
+
+    private LocalDate resolvePaymentDate(LocalDate baseDate, int dayOfMonth) {
+        int safeDay = Math.max(1, Math.min(dayOfMonth, baseDate.lengthOfMonth()));
+        return baseDate.withDayOfMonth(safeDay);
     }
 
     private void upsertSupplier(
