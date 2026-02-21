@@ -184,15 +184,14 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
         User sogangKitchenStaffExtra = upsertUser(sogangStore, "sgkitchen2", "1114", "한서강", UserRole.STORE_KITCHEN_STAFF, "010-1114-1114");
         User hongdaeManager = upsertUser(hongdaeStore, "hdkim", "1209", "김홍대", UserRole.STORE_ADMIN, "010-1209-1209");
 
-        LocalDate seedBasePaymentDate = LocalDate.now().plusMonths(2);
-        upsertSalary(hqManager, EmploymentType.MONTHLY, null, new BigDecimal("5000000"), resolvePaymentDate(seedBasePaymentDate, 5));
-        upsertSalary(sogangManagerKim, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolvePaymentDate(seedBasePaymentDate, 8));
-        upsertSalary(sogangManagerPark, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolvePaymentDate(seedBasePaymentDate, 10));
-        upsertSalary(hongdaeManager, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolvePaymentDate(seedBasePaymentDate, 12));
-        upsertSalary(sogangHallStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 15));
-        upsertSalary(sogangKitchenStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 18));
-        upsertSalary(sogangHallStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 20));
-        upsertSalary(sogangKitchenStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolvePaymentDate(seedBasePaymentDate, 22));
+        upsertSalary(hqManager, EmploymentType.MONTHLY, null, new BigDecimal("5000000"), resolveSeedPaymentDate(hqManager, 5));
+        upsertSalary(sogangManagerKim, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolveSeedPaymentDate(sogangManagerKim, 8));
+        upsertSalary(sogangManagerPark, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolveSeedPaymentDate(sogangManagerPark, 10));
+        upsertSalary(hongdaeManager, EmploymentType.MONTHLY, null, new BigDecimal("3000000"), resolveSeedPaymentDate(hongdaeManager, 12));
+        upsertSalary(sogangHallStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolveSeedPaymentDate(sogangHallStaff, 15));
+        upsertSalary(sogangKitchenStaff, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolveSeedPaymentDate(sogangKitchenStaff, 18));
+        upsertSalary(sogangHallStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolveSeedPaymentDate(sogangHallStaffExtra, 20));
+        upsertSalary(sogangKitchenStaffExtra, EmploymentType.HOURLY, new BigDecimal("12000"), null, resolveSeedPaymentDate(sogangKitchenStaffExtra, 22));
 
         upsertSupplier(
                 "신선푸드상사",
@@ -409,9 +408,19 @@ public class LocalSampleDataSeeder implements ApplicationRunner {
                 );
     }
 
-    private LocalDate resolvePaymentDate(LocalDate baseDate, int dayOfMonth) {
-        int safeDay = Math.max(1, Math.min(dayOfMonth, baseDate.lengthOfMonth()));
-        return baseDate.withDayOfMonth(safeDay);
+    private LocalDate resolveSeedPaymentDate(User user, int daysAfterJoin) {
+        LocalDate fallback = LocalDate.now().plusDays(Math.max(1, daysAfterJoin));
+        if (user == null || user.getCreatedAt() == null) {
+            return fallback;
+        }
+
+        LocalDate joinDate = user.getCreatedAt().toLocalDate();
+        LocalDate maxDate = joinDate.plusMonths(1);
+        LocalDate candidate = joinDate.plusDays(Math.max(1, daysAfterJoin));
+        if (candidate.isAfter(maxDate)) {
+            return maxDate;
+        }
+        return candidate;
     }
 
     private void upsertSupplier(
