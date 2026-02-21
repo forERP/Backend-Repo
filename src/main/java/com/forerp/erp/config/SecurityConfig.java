@@ -77,7 +77,8 @@ public class SecurityConfig {
                         "/api/attendance/status",
                         "/api/attendance/clock-in",
                         "/api/attendance/clock-out",
-                        "/api/payments/webhook/toss"
+                        "/api/payments/webhook/toss",
+                        "/api/shipments/webhook/tracker"
                 ).permitAll()
                 .anyRequest().authenticated()
         );

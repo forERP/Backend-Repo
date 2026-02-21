@@ -48,6 +48,7 @@ public class OutboundController {
         Outbound outbound = outboundService.confirmOutbound(
                 outboundId,
                 actor,
+                request.getCarrierCode(),
                 request.getCarrier(),
                 request.getTrackingNumber()
         );

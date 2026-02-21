@@ -14,6 +14,7 @@ import com.forerp.erp.purchase_order.repository.PurchaseOrderRepository;
 import com.forerp.erp.realtime.service.RealtimeEventService;
 import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.shipment.domain.ShipmentStatus;
+import com.forerp.erp.shipment.service.ShipmentService;
 import com.forerp.erp.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class InboundService {
     private final InventoryHistoryRepository inventoryHistoryRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final RealtimeEventService realtimeEventService;
+    private final ShipmentService shipmentService;
 
     private final InboundLoader loader;
     private final InboundBuilder builder;
@@ -44,11 +47,17 @@ public class InboundService {
     }
 
     /* 배송 출발 */
-    public Shipment departShipment(Long inboundId, String carrier, String trackingNumber) {
+    public Shipment departShipment(Long inboundId, String carrierCode, String carrier, String trackingNumber) {
         Inbound inbound = loader.loadInbound(inboundId);
         Shipment shipment = loader.requireShipment(inbound);
 
-        shipment.depart(carrier, trackingNumber);
+        shipment.depart(carrierCode, carrier, trackingNumber);
+        shipmentService.registerWebhookIfPossible(shipment);
+        realtimeEventService.publish("shipment.changed", inbound.getStore().getId(), Map.of(
+                "shipmentId", shipment.getId(),
+                "flowType", "INBOUND",
+                "reason", "inbound_departed"
+        ));
         return shipment;
     }
 
@@ -57,7 +66,11 @@ public class InboundService {
         Inbound inbound = loader.loadInbound(inboundId);
         Shipment shipment = loader.requireShipment(inbound);
 
-        shipment.arrive();
+        if (shipment.getStatus() == ShipmentStatus.SHIPPING) {
+            shipment.arrive();
+        } else if (shipment.getStatus() != ShipmentStatus.ARRIVED) {
+            throw new IllegalStateException("배송 도착 처리 가능한 상태가 아닙니다.");
+        }
 
         inbound.getItems().forEach(item -> {
             InventoryHistory history = item.receive(actor);
@@ -70,6 +83,11 @@ public class InboundService {
         inbound.getPurchaseOrder().markReceived();
         purchaseOrderRepository.save(inbound.getPurchaseOrder());
         realtimeEventService.publishInventoryChanged(inbound.getStore().getId(), "inbound_confirmed");
+        realtimeEventService.publish("shipment.changed", inbound.getStore().getId(), Map.of(
+                "shipmentId", shipment.getId(),
+                "flowType", "INBOUND",
+                "reason", "inbound_confirmed"
+        ));
 
         return inbound;
     }

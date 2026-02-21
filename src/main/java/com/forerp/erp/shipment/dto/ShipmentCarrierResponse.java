@@ -1,6 +1,5 @@
 package com.forerp.erp.shipment.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,12 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShipmentDepartRequest {
+public class ShipmentCarrierResponse {
     private String carrierCode;
-
-    @NotBlank
-    private String carrier;
-
-    @NotBlank
-    private String trackingNumber;
+    private String carrierName;
 }

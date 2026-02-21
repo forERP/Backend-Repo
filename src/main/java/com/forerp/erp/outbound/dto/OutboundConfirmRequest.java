@@ -11,7 +11,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OutboundConfirmRequest {
+    private String carrierCode;
+
     @NotBlank
     private String carrier;
-    @NotBlank private String trackingNumber;
+
+    @NotBlank
+    private String trackingNumber;
 }

@@ -48,7 +48,12 @@ public class InboundController {
             @PathVariable Long inboundId,
             @Valid @RequestBody ShipmentDepartRequest request
     ) {
-        Shipment shipment = inboundService.departShipment(inboundId, request.getCarrier(), request.getTrackingNumber());
+        Shipment shipment = inboundService.departShipment(
+                inboundId,
+                request.getCarrierCode(),
+                request.getCarrier(),
+                request.getTrackingNumber()
+        );
         return ResponseEntity.ok(ShipmentResponse.from(shipment));
     }
 

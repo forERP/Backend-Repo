@@ -2,7 +2,18 @@ package com.forerp.erp.shipment.domain;
 
 import com.forerp.erp.inbound.domain.Inbound;
 import com.forerp.erp.outbound.domain.Outbound;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,7 +24,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "shipments",
         indexes = {
-                @Index(name = "idx_shipment_tracking", columnList = "carrier,tracking_number")
+                @Index(name = "idx_shipment_tracking", columnList = "carrier,tracking_number"),
+                @Index(name = "idx_shipment_tracking_code", columnList = "carrier_code,tracking_number")
         }
 )
 @Getter
@@ -25,17 +37,18 @@ public class Shipment {
     @Column(name = "shipment_id")
     private Long id;
 
-    /* 출고 연관 (nullable) */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "outbound_id", unique = true)
     private Outbound outbound;
 
-    /* 입고 연관 (nullable) */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inbound_id", unique = true)
     private Inbound inbound;
 
-    @Column(name = "carrier", length = 30)
+    @Column(name = "carrier_code", length = 100)
+    private String carrierCode;
+
+    @Column(name = "carrier", length = 80)
     private String carrier;
 
     @Column(name = "tracking_number", length = 50)
@@ -56,11 +69,10 @@ public class Shipment {
 
     private void validateLink() {
         if ((inbound == null && outbound == null) || (inbound != null && outbound != null)) {
-            throw new IllegalStateException("Shipment은 inbound 또는 outbound 중 하나에만 연결되어야 합니다.");
+            throw new IllegalStateException("Shipment must be linked to either inbound or outbound.");
         }
     }
 
-    /* ===== 생성 (출고) ===== */
     public static Shipment createForOutbound(Outbound outbound) {
         Shipment shipment = new Shipment();
         shipment.outbound = outbound;
@@ -72,7 +84,6 @@ public class Shipment {
         return shipment;
     }
 
-    /* ===== 생성 (입고) ===== */
     public static Shipment createForInbound(Inbound inbound) {
         Shipment shipment = new Shipment();
         shipment.inbound = inbound;
@@ -84,31 +95,59 @@ public class Shipment {
         return shipment;
     }
 
-    /* ===== 배송 출발 ===== */
-    public void depart(String carrier, String trackingNumber) {
+    public void depart(String carrierCode, String carrier, String trackingNumber) {
         validateLink();
         if (status != ShipmentStatus.READY) {
-            throw new IllegalStateException("배송 출발이 불가능한 상태입니다.");
+            throw new IllegalStateException("Shipment cannot depart from the current status.");
         }
         if (carrier == null || carrier.isBlank()) {
-            throw new IllegalArgumentException("택배사는 필수입니다.");
+            throw new IllegalArgumentException("carrier is required.");
         }
         if (trackingNumber == null || trackingNumber.isBlank()) {
-            throw new IllegalArgumentException("송장번호는 필수입니다.");
+            throw new IllegalArgumentException("trackingNumber is required.");
         }
-        this.carrier = carrier;
-        this.trackingNumber = trackingNumber;
+
+        this.carrierCode = normalizeCarrierCode(carrierCode);
+        this.carrier = carrier.trim();
+        this.trackingNumber = trackingNumber.trim();
         this.status = ShipmentStatus.SHIPPING;
         this.departedAt = LocalDateTime.now();
     }
 
-    /* ===== 배송 도착 ===== */
     public void arrive() {
         validateLink();
         if (status != ShipmentStatus.SHIPPING) {
-            throw new IllegalStateException("배송 도착이 불가능한 상태입니다.");
+            throw new IllegalStateException("Shipment cannot arrive from the current status.");
         }
         this.status = ShipmentStatus.ARRIVED;
         this.arrivedAt = LocalDateTime.now();
+    }
+
+    public void markShippingFromTracking() {
+        validateLink();
+        if (status == ShipmentStatus.READY) {
+            this.status = ShipmentStatus.SHIPPING;
+            if (this.departedAt == null) {
+                this.departedAt = LocalDateTime.now();
+            }
+        }
+    }
+
+    public void markArrivedFromTracking() {
+        validateLink();
+        if (status == ShipmentStatus.SHIPPING) {
+            this.status = ShipmentStatus.ARRIVED;
+            if (this.arrivedAt == null) {
+                this.arrivedAt = LocalDateTime.now();
+            }
+        }
+    }
+
+    private String normalizeCarrierCode(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

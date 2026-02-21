@@ -3,6 +3,7 @@ package com.forerp.erp.outbound.service;
 import com.forerp.erp.common.query.QueryParamParser;
 import com.forerp.erp.inventory.domain.InventoryHistory;
 import com.forerp.erp.inventory.repository.InventoryHistoryRepository;
+import com.forerp.erp.order.domain.OrderStatus;
 import com.forerp.erp.outbound.domain.Outbound;
 import com.forerp.erp.outbound.domain.OutboundStatus;
 import com.forerp.erp.outbound.dto.OutboundCreateRequest;
@@ -13,6 +14,7 @@ import com.forerp.erp.outbound.service.support.OutboundLoader;
 import com.forerp.erp.realtime.service.RealtimeEventService;
 import com.forerp.erp.shipment.domain.Shipment;
 import com.forerp.erp.shipment.domain.ShipmentStatus;
+import com.forerp.erp.shipment.service.ShipmentService;
 import com.forerp.erp.storeproduct.domain.StoreProduct;
 import com.forerp.erp.user.domain.User;
 import com.forerp.erp.warehouse.domain.Warehouse;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -33,14 +36,13 @@ public class OutboundService {
     private final OutboundRepository outboundRepository;
     private final InventoryHistoryRepository inventoryHistoryRepository;
     private final RealtimeEventService realtimeEventService;
+    private final ShipmentService shipmentService;
 
     private final OutboundLoader loader;
     private final OutboundBuilder builder;
 
-    /* 출고 생성 */
     public Outbound createOutbound(OutboundCreateRequest req) {
         Outbound outbound = builder.buildOutboundAggregate(req);
-
         outbound.getOrder().markPrepared();
 
         Outbound saved = outboundRepository.save(outbound);
@@ -48,12 +50,17 @@ public class OutboundService {
         return saved;
     }
 
-    /* 배송 출발 + 재고 차감 + 출고 확정 */
-    public Outbound confirmOutbound(Long outboundId, User actor, String carrier, String trackingNumber) {
+    public Outbound confirmOutbound(Long outboundId, User actor, String carrierCode, String carrier, String trackingNumber) {
         Outbound outbound = loader.loadOutbound(outboundId);
         Shipment shipment = loader.requireShipment(outbound);
 
-        shipment.depart(carrier, trackingNumber);
+        shipment.depart(carrierCode, carrier, trackingNumber);
+        shipmentService.registerWebhookIfPossible(shipment);
+        realtimeEventService.publish("shipment.changed", outbound.getStore().getId(), Map.of(
+                "shipmentId", shipment.getId(),
+                "flowType", "OUTBOUND",
+                "reason", "outbound_confirmed"
+        ));
 
         outbound.getItems().forEach(item -> {
             InventoryHistory history = item.ship(actor);
@@ -68,30 +75,42 @@ public class OutboundService {
         return outbound;
     }
 
-    /* 배송 도착 + 주문 도착 + 출고 ARRIVED */
     public Outbound arriveOutbound(Long outboundId) {
         Outbound outbound = loader.loadOutbound(outboundId);
         Shipment shipment = loader.requireShipment(outbound);
-        loader.requireOutboundStatus(outbound, OutboundStatus.CONFIRMED);
 
-        // 배송 도착 (SHIPPING -> ARRIVED)
-        shipment.arrive();
-        // 주문 도착 (SHIPPED -> ARRIVED)
-        outbound.getOrder().markArrived();
-        // 출고 도착 (CONFIRMED -> ARRIVED)
-        outbound.arrive();
+        if (outbound.getStatus() != OutboundStatus.CONFIRMED && outbound.getStatus() != OutboundStatus.ARRIVED) {
+            throw new IllegalStateException("?? ?? ?? ??? ?? ??? ????.");
+        }
+
+        if (shipment.getStatus() == ShipmentStatus.SHIPPING) {
+            shipment.arrive();
+        } else if (shipment.getStatus() != ShipmentStatus.ARRIVED) {
+            throw new IllegalStateException("?? ?? ?? ??? ?? ??? ????.");
+        }
+
+        if (outbound.getOrder().getStatus() != OrderStatus.ARRIVED) {
+            outbound.getOrder().markArrived();
+        }
+        if (outbound.getStatus() == OutboundStatus.CONFIRMED) {
+            outbound.arrive();
+        }
+
         realtimeEventService.publishOrderChanged(outbound.getStore().getId(), outbound.getOrder().getId(), "order_arrived");
-
+        realtimeEventService.publish("shipment.changed", outbound.getStore().getId(), Map.of(
+                "shipmentId", shipment.getId(),
+                "flowType", "OUTBOUND",
+                "reason", "outbound_arrived"
+        ));
         return outbound;
     }
 
-    /* 출고 취소 (출발 전까지만) */
     public Outbound cancelOutbound(Long outboundId) {
         Outbound outbound = loader.loadOutbound(outboundId);
 
         Shipment shipment = outbound.getShipment();
         if (shipment != null && shipment.getStatus() != ShipmentStatus.READY) {
-            throw new IllegalStateException("배송 출발 이후에는 출고 취소가 불가능합니다.");
+            throw new IllegalStateException("?? ?? ???? ?? ??? ??????.");
         }
 
         outbound.cancel();
@@ -99,13 +118,11 @@ public class OutboundService {
         return outbound;
     }
 
-    /* 출고 단건 조회 */
     @Transactional(readOnly = true)
     public Outbound getOutbound(Long outboundId) {
         return loader.loadOutbound(outboundId);
     }
 
-    /* 출고 목록 조회 */
     @Transactional(readOnly = true)
     public OutboundListResponse listOutbounds(
             Long storeId,
@@ -172,25 +189,29 @@ public class OutboundService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private Long extractWarehouseId(Outbound o) {
-        Warehouse warehouse = extractWarehouse(o);
+    private Long extractWarehouseId(Outbound outbound) {
+        Warehouse warehouse = extractWarehouse(outbound);
         return warehouse == null ? null : warehouse.getId();
     }
 
-    private String extractWarehouseCode(Outbound o) {
-        Warehouse warehouse = extractWarehouse(o);
+    private String extractWarehouseCode(Outbound outbound) {
+        Warehouse warehouse = extractWarehouse(outbound);
         return warehouse == null ? null : warehouse.getCode();
     }
 
-    private String extractWarehouseName(Outbound o) {
-        Warehouse warehouse = extractWarehouse(o);
+    private String extractWarehouseName(Outbound outbound) {
+        Warehouse warehouse = extractWarehouse(outbound);
         return warehouse == null ? null : warehouse.getName();
     }
 
-    private Warehouse extractWarehouse(Outbound o) {
-        if (o.getItems() == null || o.getItems().isEmpty()) return null;
-        StoreProduct sp = o.getItems().get(0).getStoreProduct();
-        if (sp == null || sp.getWarehouse() == null) return null;
-        return sp.getWarehouse();
+    private Warehouse extractWarehouse(Outbound outbound) {
+        if (outbound.getItems() == null || outbound.getItems().isEmpty()) {
+            return null;
+        }
+        StoreProduct storeProduct = outbound.getItems().get(0).getStoreProduct();
+        if (storeProduct == null || storeProduct.getWarehouse() == null) {
+            return null;
+        }
+        return storeProduct.getWarehouse();
     }
 }

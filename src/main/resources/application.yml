@@ -12,3 +12,15 @@ toss:
     client-key: ${TOSS_CLIENT_KEY:}
     secret-key: ${TOSS_SECRET_KEY:}
     security-key: ${TOSS_SECURITY_KEY:}
+
+tracker:
+  api:
+    base-url: ${TRACKER_API_BASE_URL:https://apis.tracker.delivery/graphql}
+    client-id: ${TRACKER_CLIENT_ID:}
+    client-secret: ${TRACKER_CLIENT_SECRET:}
+    default-country-code: ${TRACKER_DEFAULT_COUNTRY_CODE:KR}
+  webhook:
+    enabled: ${TRACKER_WEBHOOK_ENABLED:true}
+    base-url: ${TRACKER_WEBHOOK_BASE_URL:}
+    secret: ${TRACKER_WEBHOOK_SECRET:}
+    expiration-hours: ${TRACKER_WEBHOOK_EXPIRATION_HOURS:48}

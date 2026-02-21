@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class ShipmentResponse {
     private Long shipmentId;
     private String status; // READY/SHIPPING/ARRIVED
+    private String carrierCode;
     private String carrier;
     private String trackingNumber;
     private LocalDateTime departedAt;
@@ -24,6 +25,7 @@ public class ShipmentResponse {
         return new ShipmentResponse(
                 s.getId(),
                 s.getStatus().name(),
+                s.getCarrierCode(),
                 s.getCarrier(),
                 s.getTrackingNumber(),
                 s.getDepartedAt(),

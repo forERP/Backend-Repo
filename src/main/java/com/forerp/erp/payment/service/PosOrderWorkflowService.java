@@ -140,6 +140,7 @@ public class PosOrderWorkflowService {
             outbound = outboundService.confirmOutbound(
                     outbound.getId(),
                     actor,
+                    null,
                     "POS",
                     buildPosTrackingNumber(outbound.getId())
             );
@@ -203,4 +204,3 @@ public class PosOrderWorkflowService {
                 + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 }
-
