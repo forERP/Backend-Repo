@@ -72,6 +72,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
+                        "/error",
                         "/api/users/login/**",
                         "/api/users/setup/**",
                         "/api/attendance/status",

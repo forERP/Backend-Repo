@@ -83,9 +83,12 @@ public class ShipmentService {
         ShipmentStatus parsedStatus = QueryParamParser.parseEnumOrNull(shipmentStatus, ShipmentStatus.class, "shipmentStatus");
         LocalDateTime fromDt = QueryParamParser.parseFromDate(from);
         LocalDateTime toDt = QueryParamParser.parseToDateExclusive(to);
+        boolean includeInbound = parsedFlowType == null || parsedFlowType == ShipmentFlowType.INBOUND;
+        boolean includeOutbound = parsedFlowType == null || parsedFlowType == ShipmentFlowType.OUTBOUND;
 
         Page<Shipment> result = shipmentRepository.search(
-                parsedFlowType,
+                includeInbound,
+                includeOutbound,
                 storeId,
                 warehouseId,
                 parsedStatus,
