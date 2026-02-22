@@ -5,6 +5,17 @@ spring:
 server:
   port: 8089
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    filter: true
+  show-actuator: false
+
 toss:
   api:
     base-url: ${TOSS_API_BASE_URL:https://api.tosspayments.com}
