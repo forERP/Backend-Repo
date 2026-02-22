@@ -1,16 +1,20 @@
 package com.forerp.erp.user.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
+@Schema(description = "로그인 요청")
 public class LoginRequestDto {
 
     @NotBlank
-    private String identifier; // loginId 또는 employeeCode 다 가능하게 해둔건데 어차피 포스기는 비밀번호를 안 쓰니 걍 따로 만들긴 해야 할 듯
+    @Schema(description = "로그인 ID 또는 사원번호", example = "admin01")
+    private String identifier;
 
     @NotBlank
+    @Schema(description = "비밀번호", example = "password123")
     private String password;
 }

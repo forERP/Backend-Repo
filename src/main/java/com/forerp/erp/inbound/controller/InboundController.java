@@ -1,5 +1,6 @@
 package com.forerp.erp.inbound.controller;
 
+import com.forerp.erp.common.exception.ApiErrorResponse;
 import com.forerp.erp.inbound.domain.Inbound;
 import com.forerp.erp.inbound.dto.InboundCreateRequest;
 import com.forerp.erp.inbound.dto.InboundListResponse;
@@ -14,6 +15,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -23,29 +26,42 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Inbound", description = "입고(거래처 → 지점) 관리 API (관리자 전용)")
+@Tag(name = "입고", description = "입고 (공급업체 → 창고) 관리 API")
 @RestController
 @RequestMapping("/api/inbounds")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class InboundController {
 
     private final InboundService inboundService;
 
     @Operation(summary = "입고 생성", description = "발주 기반 입고 문서 생성 + Shipment(READY) 자동 생성")
-    @ApiResponse(responseCode = "201", description = "Created",
-            content = @Content(schema = @Schema(implementation = InboundResponse.class)))
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "생성 성공",
+                content = @Content(schema = @Schema(implementation = InboundResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     @PostMapping
     public ResponseEntity<InboundResponse> createInbound(@Valid @RequestBody InboundCreateRequest request) {
         Inbound inbound = inboundService.createInbound(request);
         return ResponseEntity.status(201).body(InboundResponse.from(inbound));
     }
 
-    @Operation(summary = "입고 배송 출발(송장 입력)", description = "Shipment READY → SHIPPING")
-    @ApiResponse(responseCode = "200", description = "OK",
-            content = @Content(schema = @Schema(implementation = ShipmentResponse.class)))
+    @Operation(summary = "입고 배송 출발 처리 (운송장 등록)", description = "Shipment READY → SHIPPING")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "처리 성공",
+                content = @Content(schema = @Schema(implementation = ShipmentResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "입고 없음",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     @PostMapping("/{inboundId}/shipment/depart")
     public ResponseEntity<ShipmentResponse> departShipment(
-            @PathVariable Long inboundId,
+            @Parameter(description = "입고 ID", example = "1") @PathVariable Long inboundId,
             @Valid @RequestBody ShipmentDepartRequest request
     ) {
         Shipment shipment = inboundService.departShipment(
@@ -57,88 +73,89 @@ public class InboundController {
         return ResponseEntity.ok(ShipmentResponse.from(shipment));
     }
 
-    @Operation(summary = "입고 확정", description = "배송 도착 처리 + 재고 증가 + Inbound CONFIRMED + PurchaseOrder markReceived")
-    @ApiResponse(responseCode = "200", description = "OK",
-            content = @Content(schema = @Schema(implementation = InboundResponse.class)))
+    @Operation(summary = "입고 확정", description = "배송 도착 재고 처리 + 재고반영 + Inbound CONFIRMED + PurchaseOrder markReceived")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "확정 성공",
+                content = @Content(schema = @Schema(implementation = InboundResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "입고 없음",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     @PostMapping("/{inboundId}/confirm")
     public ResponseEntity<InboundResponse> confirmInbound(
-            @PathVariable Long inboundId,
+            @Parameter(description = "입고 ID", example = "1") @PathVariable Long inboundId,
             @AuthenticationPrincipal User actor
     ) {
         Inbound inbound = inboundService.confirmInbound(inboundId, actor);
         return ResponseEntity.ok(InboundResponse.from(inbound));
     }
 
-    @Operation(summary = "입고 취소", description = "배송 출발 전(Shipment READY)까지만 취소 가능")
-    @ApiResponse(responseCode = "200", description = "OK",
-            content = @Content(schema = @Schema(implementation = InboundResponse.class)))
+    @Operation(summary = "입고 취소", description = "배송 출발 전(Shipment READY) 상태에서만 취소 가능")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "취소 성공",
+                content = @Content(schema = @Schema(implementation = InboundResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "입고 없음",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     @PostMapping("/{inboundId}/cancel")
-    public ResponseEntity<InboundResponse> cancelInbound(@PathVariable Long inboundId) {
+    public ResponseEntity<InboundResponse> cancelInbound(
+            @Parameter(description = "입고 ID", example = "1") @PathVariable Long inboundId) {
         Inbound inbound = inboundService.cancelInbound(inboundId);
         return ResponseEntity.ok(InboundResponse.from(inbound));
     }
 
     @Operation(summary = "입고 단건 조회")
-    @ApiResponse(responseCode = "200", description = "OK",
-            content = @Content(schema = @Schema(implementation = InboundResponse.class)))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+                content = @Content(schema = @Schema(implementation = InboundResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "입고 없음",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     @GetMapping("/{inboundId}")
-    public ResponseEntity<InboundResponse> getInbound(@PathVariable Long inboundId) {
+    public ResponseEntity<InboundResponse> getInbound(
+            @Parameter(description = "입고 ID", example = "1") @PathVariable Long inboundId) {
         Inbound inbound = inboundService.getInbound(inboundId);
         return ResponseEntity.ok(InboundResponse.from(inbound));
     }
 
-
     @Operation(summary = "입고 목록 조회/검색",
-            description = """
-                - storeId/status/from/to는 선택
-                - from/to 형식: yyyy-MM-dd
-                - to는 '포함' 조건(내부적으로 to+1일 미만으로 조회)
-                """)
-    @ApiResponse(responseCode = "200", description = "OK",
-            content = @Content(schema = @Schema(implementation = InboundListResponse.class)))
+            description = "storeId/status/from/to 필터 선택 가능. from/to 형식: yyyy-MM-dd. to는 '포함' 조건(당일 23:59:59로 조회)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+                content = @Content(schema = @Schema(implementation = InboundListResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요",
+                content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     @GetMapping
     public ResponseEntity<InboundListResponse> listInbounds(
-            @Parameter(description = "매장 ID(선택)", example = "1")
+            @Parameter(description = "매장 ID (선택)", example = "1")
             @RequestParam(required = false) Long storeId,
-
             @RequestParam(required = false) String storeKeyword,
-
-            @Parameter(description = "매장명(선택, 부분일치)", example = "강남")
+            @Parameter(description = "매장명 (선택, 부분일치)", example = "강남")
             @RequestParam(required = false) String storeName,
-
-            @Parameter(description = "매장코드(선택, 부분일치)", example = "ST")
+            @Parameter(description = "매장코드 (선택, 부분일치)", example = "ST")
             @RequestParam(required = false) String storeCode,
-
-            @Parameter(description = "입고 상태(선택): CREATED/CONFIRMED/CANCELED", example = "CREATED")
+            @Parameter(description = "입고 상태 (선택): CREATED/CONFIRMED/CANCELED", example = "CREATED")
             @RequestParam(required = false) String status,
-            @Parameter(description = "Shipment status (optional): READY/SHIPPING/ARRIVED", example = "SHIPPING")
+            @Parameter(description = "Shipment 상태 (선택): READY/SHIPPING/ARRIVED", example = "SHIPPING")
             @RequestParam(required = false) String shipmentStatus,
-
-            @Parameter(description = "조회 시작일(선택), yyyy-MM-dd", example = "2026-02-01")
+            @Parameter(description = "조회 시작일 (선택), yyyy-MM-dd", example = "2026-02-01")
             @RequestParam(required = false) String from,
-
-            @Parameter(description = "조회 종료일(선택), yyyy-MM-dd", example = "2026-02-28")
+            @Parameter(description = "조회 종료일 (선택), yyyy-MM-dd", example = "2026-02-28")
             @RequestParam(required = false) String to,
-
             @Parameter(description = "페이지(0부터)", example = "0")
-            @Min(0)
-            @RequestParam(defaultValue = "0") int page,
-
+            @Min(0) @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기", example = "20")
-            @Min(1) @Max(100)
-            @RequestParam(defaultValue = "20") int size
+            @Min(1) @Max(100) @RequestParam(defaultValue = "20") int size
     ) {
         return ResponseEntity.ok(inboundService.listInbounds(
-                storeId,
-                storeKeyword,
-                storeName,
-                storeCode,
-                status,
-                shipmentStatus,
-                from,
-                to,
-                page,
-                size
+                storeId, storeKeyword, storeName, storeCode,
+                status, shipmentStatus, from, to, page, size
         ));
     }
 }
