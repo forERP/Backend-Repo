@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +34,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Transactional
 public class PosOrderWorkflowService {
+
+    private static final String DUMMY_CARRIER_CODE = "dev.track.dummy";
+    private static final String DUMMY_CARRIER_NAME = "Dummy (테스트)";
 
     private final PaymentRepository paymentRepository;
     private final OutboundRepository outboundRepository;
@@ -137,12 +142,22 @@ public class PosOrderWorkflowService {
         }
 
         if (outbound.getStatus() == OutboundStatus.CREATED) {
+            String carrierCode = null;
+            String carrier = "POS";
+            String trackingNumber = buildPosTrackingNumber(outbound.getId());
+
+            if (payment.getServiceMode() == ServiceMode.DELIVERY) {
+                carrierCode = DUMMY_CARRIER_CODE;
+                carrier = DUMMY_CARRIER_NAME;
+                trackingNumber = buildDummyTrackingNumber();
+            }
+
             outbound = outboundService.confirmOutbound(
                     outbound.getId(),
                     actor,
-                    null,
-                    "POS",
-                    buildPosTrackingNumber(outbound.getId())
+                    carrierCode,
+                    carrier,
+                    trackingNumber
             );
         }
 
@@ -202,5 +217,18 @@ public class PosOrderWorkflowService {
     private String buildPosTrackingNumber(Long outboundId) {
         return "POS-" + outboundId + "-"
                 + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    }
+
+    private String buildDummyTrackingNumber() {
+        ZonedDateTime nowUtc = ZonedDateTime.now(ZoneOffset.UTC);
+        int flooredUtcHour = nowUtc.getHour() - (nowUtc.getHour() % 3);
+        ZonedDateTime target = nowUtc
+                .withHour(flooredUtcHour)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0)
+                .minusHours(6);
+
+        return target.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
     }
 }
