@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -43,4 +44,50 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"store", "warehouse", "items", "items.product"})
     @Query("select o from Order o where o.id = :id")
     Optional<Order> findDetailById(@Param("id") Long id);
+
+    @Query("""
+        select count(o) from Order o
+        where (:storeId is null or o.store.id = :storeId)
+          and o.orderedAt >= :fromDt
+          and o.orderedAt < :toDt
+        """)
+    long countForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("fromDt") LocalDateTime fromDt,
+            @Param("toDt") LocalDateTime toDt
+    );
+
+    @Query("""
+        select coalesce(sum(o.totalAmount), 0)
+        from Order o
+        where (:storeId is null or o.store.id = :storeId)
+          and o.status <> com.forerp.erp.order.domain.OrderStatus.CANCELED
+          and o.orderedAt >= :fromDt
+          and o.orderedAt < :toDt
+        """)
+    BigDecimal sumSalesAmountForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("fromDt") LocalDateTime fromDt,
+            @Param("toDt") LocalDateTime toDt
+    );
+
+    @Query("""
+        select count(o) from Order o
+        where (:storeId is null or o.store.id = :storeId)
+          and o.status = :status
+          and o.orderedAt <= :thresholdDt
+        """)
+    long countDelayedForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("status") OrderStatus status,
+            @Param("thresholdDt") LocalDateTime thresholdDt
+    );
+
+    @EntityGraph(attributePaths = {"store"})
+    @Query("""
+        select o from Order o
+        where (:storeId is null or o.store.id = :storeId)
+        order by o.orderedAt desc
+        """)
+    Page<Order> findRecentForDashboard(@Param("storeId") Long storeId, Pageable pageable);
 }

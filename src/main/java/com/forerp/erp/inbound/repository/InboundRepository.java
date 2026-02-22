@@ -46,4 +46,28 @@ public interface InboundRepository extends JpaRepository<Inbound, Long> {
     );
 
     boolean existsByPurchaseOrder_Id(Long purchaseOrderId);
+
+    @Query("""
+        select count(i) from Inbound i
+        where (:storeId is null or i.store.id = :storeId)
+          and i.status = :status
+          and i.createdAt >= :fromDt
+          and i.createdAt < :toDt
+        """)
+    long countForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("status") InboundStatus status,
+            @Param("fromDt") LocalDateTime fromDt,
+            @Param("toDt") LocalDateTime toDt
+    );
+
+    @Query("""
+        select count(i) from Inbound i
+        where (:storeId is null or i.store.id = :storeId)
+          and i.status = :status
+        """)
+    long countByStatusForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("status") InboundStatus status
+    );
 }

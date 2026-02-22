@@ -58,4 +58,28 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
 
     @EntityGraph(attributePaths = {"order", "store", "shipment", "items", "items.orderItem", "items.storeProduct", "items.storeProduct.warehouse"})
     List<Outbound> findByOrder_IdIn(List<Long> orderIds);
+
+    @Query("""
+        select count(o) from Outbound o
+        where (:storeId is null or o.store.id = :storeId)
+          and o.status in :statuses
+          and o.createdAt >= :fromDt
+          and o.createdAt < :toDt
+        """)
+    long countForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("statuses") List<OutboundStatus> statuses,
+            @Param("fromDt") LocalDateTime fromDt,
+            @Param("toDt") LocalDateTime toDt
+    );
+
+    @Query("""
+        select count(o) from Outbound o
+        where (:storeId is null or o.store.id = :storeId)
+          and o.status = :status
+        """)
+    long countByStatusForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("status") OutboundStatus status
+    );
 }

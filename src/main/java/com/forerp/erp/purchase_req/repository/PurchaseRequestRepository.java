@@ -47,4 +47,14 @@ public interface PurchaseRequestRepository extends JpaRepository<PurchaseRequest
     })
     @Query("select pr from PurchaseRequest pr where pr.id = :id")
     PurchaseRequest findDetailById(@Param("id") Long id);
+
+    @Query("""
+        select count(pr) from PurchaseRequest pr
+        where (:storeId is null or pr.store.id = :storeId)
+          and pr.status = :status
+        """)
+    long countByStatusForDashboard(
+            @Param("storeId") Long storeId,
+            @Param("status") PurchaseRequestStatus status
+    );
 }

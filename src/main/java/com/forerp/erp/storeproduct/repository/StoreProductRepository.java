@@ -129,4 +129,13 @@ public interface StoreProductRepository extends JpaRepository<StoreProduct, Long
             @Param("storeId") Long storeId,
             Pageable pageable
     );
+
+    @Query("""
+        select count(distinct sp.product.id)
+        from StoreProduct sp
+        where (:storeId is null or sp.store.id = :storeId)
+          and sp.product.status = com.forerp.erp.product.domain.ProductStatus.ACTIVE
+          and sp.quantity <= sp.stockThreshold
+        """)
+    long countLowStockSkuForDashboard(@Param("storeId") Long storeId);
 }
